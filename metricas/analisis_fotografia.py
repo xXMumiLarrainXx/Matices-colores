@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pathlib import Path
 from typing import Union
 
@@ -29,6 +30,24 @@ class AnalizadorFotografia:
     _L_MINIMO = 25
     _L_MAXIMO = 250
     _UMBRAL_CALIDEZ = 4.5
+    _PIEL_MINIMA = np.array((_L_MINIMO, _CR_MINIMO, _CB_MINIMO), dtype=np.uint8)
+    _PIEL_MAXIMA = np.array((_L_MAXIMO, _CR_MAXIMO, _CB_MAXIMO), dtype=np.uint8)
+
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _obtener_detector() -> cv2.CascadeClassifier:
+        """Carga el clasificador una sola vez por proceso.
+
+        Leer y construir el clasificador Haar es más costoso que reutilizarlo.
+        La función cacheada conserva exactamente el mismo detector y evita
+        repetir esa inicialización en cada fotografía analizada.
+        """
+        detector = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        if detector.empty():
+            raise RuntimeError("No se pudo cargar el detector de rostros de OpenCV.")
+        return detector
 
     def analizar(self, ruta_fotografia: Union[str, Path]) -> ResultadoFotografia:
         """Detecta el rostro mayor y calcula el perfil desde las mejillas."""
@@ -43,11 +62,7 @@ class AnalizadorFotografia:
             )
 
         gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-        detector = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        )
-        if detector.empty():
-            raise RuntimeError("No se pudo cargar el detector de rostros de OpenCV.")
+        detector = self._obtener_detector()
 
         rostros = detector.detectMultiScale(
             gris,
@@ -129,19 +144,15 @@ class AnalizadorFotografia:
             if mejilla.size == 0:
                 continue
             ycrcb = cv2.cvtColor(mejilla, cv2.COLOR_BGR2YCrCb)
-            y_canal, cr_canal, cb_canal = cv2.split(ycrcb)
-            mascara = (
-                (y_canal >= self._L_MINIMO)
-                & (y_canal <= self._L_MAXIMO)
-                & (cr_canal >= self._CR_MINIMO)
-                & (cr_canal <= self._CR_MAXIMO)
-                & (cb_canal >= self._CB_MINIMO)
-                & (cb_canal <= self._CB_MAXIMO)
-            )
-            pixeles_piel = mejilla[mascara]
+            # inRange aplica los seis límites en una sola operación nativa,
+            # evitando separar los canales y crear varias máscaras NumPy.
+            mascara = cv2.inRange(ycrcb, self._PIEL_MINIMA, self._PIEL_MAXIMA)
+            pixeles_piel = mejilla[mascara != 0]
             if len(pixeles_piel):
                 muestras.append(pixeles_piel)
 
         if not muestras:
             return np.empty((0, 3), dtype=np.uint8)
+        if len(muestras) == 1:
+            return muestras[0]
         return np.concatenate(muestras, axis=0)

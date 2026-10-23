@@ -56,7 +56,10 @@ MAX_TRYON_IMAGE_HEIGHT = 768
 MAX_TRYON_IMAGE_BYTES = 2 * 1024 * 1024
 TRYON_JPEG_QUALITY = 82
 MIN_TRYON_JPEG_QUALITY = 42
-MAX_FALABELLA_RESPONSE_BYTES = 3 * 1024 * 1024
+# Las páginas de búsqueda de Falabella incluyen metadata de variantes y pueden
+# crecer bastante según la categoría. Se mantiene un límite finito, pero amplio
+# para evitar rechazos normales sin permitir respuestas ilimitadas.
+MAX_FALABELLA_RESPONSE_BYTES = 32 * 1024 * 1024
 FALABELLA_CACHE_SIZE = 16
 FALABELLA_IMAGE_CACHE_SIZE = 24
 _MANNEQUIN_ARTWORK_LOCK = threading.Lock()
@@ -427,8 +430,8 @@ class AsesorRequestHandler(SimpleHTTPRequestHandler):
             payload = self._read_json(MAX_TRYON_REQUEST_BYTES)
             person_image = self._validate_image(payload.get("person_image"))
             garments = payload.get("garments")
-            if not isinstance(garments, list) or not 1 <= len(garments) <= 2:
-                raise ValueError("Selecciona una prenda o un conjunto de dos prendas.")
+            if not isinstance(garments, list) or not 1 <= len(garments) <= 8:
+                raise ValueError("Selecciona entre una y ocho prendas.")
             normalized_garments: list[TryOnGarment] = []
             for garment in garments:
                 if not isinstance(garment, dict):
@@ -460,14 +463,6 @@ class AsesorRequestHandler(SimpleHTTPRequestHandler):
                     raise ValueError("La categoría de una prenda no es válida.")
                 normalized_garments.append(
                     {"image_urls": image_urls, "category": category}
-                )
-            categories = [garment["category"] for garment in normalized_garments]
-            if len(set(categories)) != len(categories) or (
-                "one-pieces" in categories and len(categories) > 1
-            ):
-                raise ValueError(
-                    "Un vestido debe probarse solo; combina como máximo una prenda "
-                    "superior y una inferior."
                 )
             image = self._run_tryon(person_image, normalized_garments)
             self._send_json(200, {"image": image})

@@ -10,6 +10,16 @@ class ResultadoFotografia:
     No calcula métricas; conserva el conteo de rostros y píxeles, L* y b* - a*.
     """
 
+    # Es un objeto de resultado creado por cada análisis. Al no permitir
+    # atributos dinámicos reducimos memoria por instancia sin cambiar su API.
+    __slots__ = (
+        "matiz_piel",
+        "rostros_detectados",
+        "pixeles_analizados",
+        "luminosidad_lab",
+        "indice_calidez",
+    )
+
     # ------------------------------------------------------------------
     # Perfil categórico y contadores del muestreo
     # ------------------------------------------------------------------

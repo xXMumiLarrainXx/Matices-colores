@@ -6,33 +6,87 @@
     <meta name="theme-color" content="#f4eee6">
     <title>Matices — Asesor de color</title>
     <link rel="stylesheet" href="/styles.css">
-    <script type="module" src="/app.js?v=gemini-image-tryon"></script>
+    <script type="module" src="/app.js?v=checkout-payment-empty-40"></script>
   </head>
   <body>
+    <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="login-title" hidden>
+      <form id="login-form" class="login-card">
+        <p class="eyebrow">MATICES</p>
+        <h2 id="login-title">Iniciar sesión</h2>
+        <p class="login-copy">Accede para explorar tu asesoría de color.</p>
+        <label class="login-field">
+          Usuario
+          <input id="login-username" name="username" type="text" autocomplete="username" placeholder="Usuario" required>
+        </label>
+        <label class="login-field">
+          Contraseña
+          <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Contraseña" required>
+        </label>
+        <label class="remember-password">
+          <input id="remember-password" type="checkbox">
+          <span>Guardar contraseña</span>
+        </label>
+        <p id="login-status" class="login-status" role="alert" aria-live="polite"></p>
+        <button class="primary-button login-button" type="submit">Ingresar</button>
+      </form>
+    </div>
+    <div id="welcome-overlay" class="welcome-overlay" role="dialog" aria-modal="true" aria-label="Mensaje de bienvenida" tabindex="-1">
+      <div class="welcome-card">
+        <p class="eyebrow">MATICES</p>
+        <h2>Compra con tus colores online</h2>
+      </div>
+    </div>
+    <div id="app-content" hidden>
     <header class="topbar">
       <a class="brand" href="/" aria-label="Matices, inicio">
         <span class="brand-mark">M</span>
         <span>matices<span class="brand-dot">.</span></span>
       </a>
       <span class="topbar-note">ESTUDIO DE COLOR PERSONAL</span>
+      <div class="account-area">
+        <button id="account-menu-button" class="account-menu-button" type="button" aria-expanded="false" aria-controls="account-menu">
+          <span class="account-avatar" aria-hidden="true">
+            <img id="account-avatar-image" alt="" hidden>
+            <span id="account-avatar-fallback">A</span>
+          </span>
+          <span>admin</span>
+          <span aria-hidden="true">⌄</span>
+        </button>
+        <div id="account-menu" class="account-menu" hidden>
+          <button id="profile-menu-button" type="button">Ver perfil</button>
+          <button id="payment-menu-button" type="button">Métodos de pago</button>
+          <button id="settings-menu-button" type="button">Configuración de usuario</button>
+          <button id="logout-button" class="account-logout-button" type="button">Cerrar sesión</button>
+        </div>
+      </div>
     </header>
 
     <main>
-      <section class="intro">
-        <p class="eyebrow">TU COLOR, TU ESTILO</p>
-        <h1>Encuentra los tonos<br>que hablan <em>de ti.</em></h1>
-        <p class="intro-copy">
-          Carga un retrato y recibe una guía visual de colores para explorar.
-          La estimación es orientativa: tu estilo no tiene reglas.
-        </p>
-      </section>
+      <nav class="flow-navigation" aria-label="Paso a paso">
+        <button id="flow-previous" class="flow-arrow" type="button" aria-label="Paso anterior" disabled>←</button>
+        <div class="flow-steps">
+          <button class="flow-step is-active" type="button" data-flow-target="analysis">
+            <strong>Analiza tu color</strong>
+          </button>
+          <span class="flow-connector" aria-hidden="true"></span>
+          <button class="flow-step" type="button" data-flow-target="shopping" disabled>
+            <strong>Explorar</strong>
+          </button>
+          <span class="flow-connector" aria-hidden="true"></span>
+          <button class="flow-step" type="button" data-flow-target="payment" disabled>
+            <strong>Pago</strong>
+          </button>
+        </div>
+        <button id="flow-next" class="flow-arrow" type="button" aria-label="Siguiente paso" disabled>→</button>
+      </nav>
 
-      <section class="workspace" aria-label="Analizar una fotografía">
+      <div id="app-flow" class="app-flow">
+        <section class="flow-slide is-active" data-flow-slide="analysis" aria-label="Analizar una fotografía">
+          <section class="workspace" aria-label="Analizar una fotografía">
         <div class="upload-card">
           <div class="section-heading">
-            <span class="step">01</span>
             <div>
-              <h2>Tu fotografía</h2>
+              <h2>Foto</h2>
               <p>Un retrato frontal con luz natural da mejores referencias.</p>
             </div>
           </div>
@@ -44,6 +98,26 @@
             <span class="drop-hint">JPG, PNG o WEBP · máximo 12 MB</span>
             <img id="preview" alt="Vista previa de la fotografía seleccionada" hidden>
           </label>
+          <div class="analysis-mode-control">
+            <div class="switch-label">
+              <span>
+                <strong>Detección automática de colores</strong>
+              </span>
+              <span class="analysis-toggle-actions">
+                <span class="explanation-tooltip analysis-explanation">
+                  <button class="explanation-tooltip-trigger" type="button" aria-label="Explicar detección automática">?</button>
+                  <span class="explanation-tooltip-content">Usar la foto de perfil para analizar los colores al seleccionarla.</span>
+                </span>
+                <label class="switch-control" aria-label="Activar o desactivar la detección automática de colores">
+                  <input id="auto-color-analysis" type="checkbox" checked>
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </label>
+              </span>
+            </div>
+            <button id="analyze-photo-button" class="primary-button analyze-photo-button" type="button" hidden>
+              Detectar colores de la foto
+            </button>
+          </div>
           <div class="photo-actions">
             <button id="camera-button" class="secondary-button" type="button">
               <span aria-hidden="true">◎</span>
@@ -58,23 +132,13 @@
               <button id="close-camera-button" class="text-button" type="button">Cerrar cámara</button>
             </div>
           </div>
-          <button id="analyze-button" class="primary-button" type="button" disabled>
-            <span id="button-label">Analizar mi paleta</span>
-            <span aria-hidden="true">↗</span>
-          </button>
-          <button id="saved-sets-button" class="secondary-button saved-sets-button" type="button">
-            Conjuntos guardados
-          </button>
-          <p id="status" class="status" role="status" aria-live="polite">
-            La foto se analiza en este navegador; no se carga a un servidor.
-          </p>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
         </div>
 
         <div class="result-card" id="results" aria-live="polite">
           <div class="section-heading">
-            <span class="step">02</span>
             <div>
-              <h2>Tu lectura de color</h2>
+              <h2>Tus colores</h2>
               <p>Una guía para experimentar, no una etiqueta.</p>
             </div>
           </div>
@@ -92,7 +156,6 @@
                   <span id="undertone-help"></span>
                 </span>
                 <strong id="undertone">—</strong>
-                <div class="profile-visual-caption">Matices detectados en las mejillas</div>
                 <div id="undertone-scale" class="profile-scale undertone-scale" role="img" aria-label="Escala de subtonos">
                   <span data-level="frío">Frío</span>
                   <span data-level="neutro">Neutro</span>
@@ -139,34 +202,38 @@
             <div id="outfit-comparison" class="outfit-comparison" hidden></div>
           </section>
         </div>
-      </section>
+          </section>
+        </section>
 
-      <section id="shopping-panel" class="shopping-panel" hidden aria-label="Armar un conjunto">
+        <section class="flow-slide" data-flow-slide="shopping" aria-label="Explorar">
+          <section id="shopping-panel" class="shopping-panel" hidden aria-label="Explorar">
         <div class="section-heading">
-          <span class="step">03</span>
           <div>
-            <h2>Arma tu conjunto</h2>
+            <h2>Explorar</h2>
             <p>Explora prendas, agrégalas al maniquí con una guía de color basada en tu piel y tus gustos.</p>
           </div>
+          <button id="filters-toggle" class="filter-toggle explore-filter-toggle" type="button" aria-expanded="false" aria-controls="garment-filter-options">
+            <span>FILTRO</span>
+            <span class="filter-toggle-icon" aria-hidden="true">⌃</span>
+          </button>
         </div>
 
-        <div class="garment-tabs" role="tablist" aria-label="Categoría de ropa">
-          <button id="upperwear-tab" class="garment-tab active" type="button" role="tab" aria-selected="true" data-category="upper">Prendas superiores</button>
-          <button id="lowerwear-tab" class="garment-tab" type="button" role="tab" aria-selected="false" data-category="lower">Prendas inferiores</button>
-        </div>
-
-        <div class="shopping-explorer-layout">
-          <div class="shopping-controls" aria-label="Filtros de prendas">
+        <div class="shopping-controls is-collapsed" aria-label="Productos">
+          <div id="garment-filter-options" class="filter-options">
+            <div class="garment-tabs" role="tablist" aria-label="Categoría de ropa">
+              <button id="upperwear-tab" class="garment-tab active" type="button" role="tab" aria-selected="true" data-category="upper">Prendas superiores</button>
+              <button id="lowerwear-tab" class="garment-tab" type="button" role="tab" aria-selected="false" data-category="lower">Prendas inferiores</button>
+            </div>
             <div class="control-group">
               <label class="profile-label" for="garment-gender">GÉNERO</label>
               <select id="garment-gender" aria-label="Género de la persona">
-                <option value="">Selecciona</option>
+                <option value="" selected>Todos</option>
                 <option value="hombre">Masculino</option>
                 <option value="mujer">Femenino</option>
               </select>
             </div>
             <div class="control-group">
-              <label id="garment-size-label" class="profile-label" for="garment-size">TALLA VERIFICADA</label>
+              <label id="garment-size-label" class="profile-label" for="garment-size">TALLA</label>
               <select id="garment-size" aria-label="Talla verificada" disabled>
                 <option value="">Selecciona una talla antes de explorar</option>
               </select>
@@ -178,30 +245,35 @@
               </select>
             </div>
             <div class="control-group">
-              <span class="profile-label">COLORES RECOMENDADOS</span>
+              <span class="profile-label">COLORES</span>
               <button id="all-colors-button" class="all-colors-button" type="button" aria-pressed="false">
                 TODOS LOS COLORES
               </button>
               <div id="garment-colors" class="garment-colors" role="group" aria-label="Color de la prenda"></div>
             </div>
           </div>
+        </div>
 
+        <div class="shopping-explorer-layout">
           <section class="falabella-section" aria-labelledby="falabella-heading">
             <div class="falabella-heading">
-              <div>
-                <span class="profile-label">COMPRAR EN FALABELLA CHILE</span>
-                <h3 id="falabella-heading">Prendas para explorar</h3>
-              </div>
+              <h3 id="falabella-heading">Productos</h3>
+            </div>
+            <div id="falabella-products" class="falabella-products" aria-live="polite"></div>
+            <div class="falabella-products-footer">
+              <p id="falabella-hint" class="falabella-hint">Elige género, color y tipo de prenda. La talla verificada comienza en Todos y puedes limitarla si quieres.</p>
               <a
                 class="falabella-store-link"
                 href="https://www.falabella.com/falabella-cl"
                 target="_blank"
                 rel="noopener noreferrer"
               >Ir a Falabella ↗</a>
+              <div class="products-pagination" aria-label="Navegación de prendas" hidden>
+                <button id="products-previous" class="products-page-arrow" type="button" aria-label="Ver prendas anteriores" disabled>←</button>
+                <span id="products-page" aria-live="polite">1 / 1</span>
+                <button id="products-next" class="products-page-arrow" type="button" aria-label="Buscar más prendas">→</button>
+              </div>
             </div>
-            <p id="falabella-hint" class="falabella-hint">Elige género, color y tipo de prenda. La talla verificada comienza en Todos y puedes limitarla si quieres.</p>
-            <div id="falabella-products" class="falabella-products" aria-live="polite"></div>
-            <p class="falabella-disclaimer">Se muestran los productos comprables que devuelve la búsqueda pública de Falabella para estos filtros. Se indica la disponibilidad por talla; Falabella no publica aquí el número de unidades disponibles. “Todos los colores” muestra la paleta completa. Confirma disponibilidad, color y precio en la tienda.</p>
           </section>
         </div>
 
@@ -209,9 +281,11 @@
           <section class="mannequin-panel" aria-labelledby="mannequin-heading">
             <div class="board-heading">
               <div>
-                <span class="profile-label">VISTA DE CONJUNTO</span>
-                <h3 id="mannequin-heading">Tu maniquí</h3>
+                <h3 id="mannequin-heading">Vista del Conjunto</h3>
               </div>
+              <button id="saved-sets-button" class="secondary-button mannequin-saved-sets-button" type="button">
+                Conjuntos guardados
+              </button>
             </div>
             <div id="mannequin" class="mannequin" aria-label="Maniquí ilustrado con el conjunto seleccionado">
               <img
@@ -250,16 +324,10 @@
                 <div class="mannequin-base"></div>
               </div>
             </div>
-            <p id="mannequin-note" class="mannequin-note" aria-live="polite">El maniquí es una guía ilustrativa; la prueba virtual funciona localmente y puede usar Gemini si configuras una clave de API.</p>
+            <p id="mannequin-note" class="mannequin-note" aria-live="polite" hidden></p>
           </section>
 
-          <aside class="outfit-panel" aria-labelledby="outfit-heading">
-            <div class="board-heading">
-              <div>
-                <span class="profile-label">PRENDAS Y PRECIOS</span>
-                <h3 id="outfit-heading" class="help-heading">Tu conjunto</h3>
-              </div>
-            </div>
+          <aside class="outfit-panel" aria-label="Detalles del conjunto">
             <div id="selected-outfit-items" class="selected-outfit-items" aria-live="polite"></div>
             <p id="outfit-empty" class="outfit-empty">Agrega prendas desde los resultados de Falabella.</p>
             <div class="outfit-total">
@@ -268,9 +336,7 @@
             </div>
             <p class="outfit-price-note">Los precios se consultan en Falabella y pueden cambiar. El total suma solo prendas con precio disponible.</p>
             <button id="save-outfit-button" class="secondary-button save-outfit-button" type="button" disabled>Guardar conjunto</button>
-            <p id="create-outfit-status" class="status" role="status" aria-live="polite">
-              Agrega una foto y prendas para generar la prueba virtual automáticamente. Sin una clave de Gemini se usa un modo local sin enviar tu foto.
-            </p>
+            <p id="create-outfit-status" class="status" role="status" aria-live="polite" hidden></p>
             <div id="created-outfit" class="created-outfit" hidden>
               <img id="created-outfit-image" alt="Vista generada del conjunto en la persona">
               <button id="save-created-outfit-button" class="secondary-button" type="button">
@@ -280,13 +346,21 @@
           </aside>
         </div>
 
-        <section id="shopping-cart" class="shopping-cart" aria-labelledby="shopping-cart-heading">
+          </section>
+        </section>
+
+        <section class="flow-slide" data-flow-slide="payment" aria-label="Confirmar pago">
+        <div id="cart-modal-backdrop" class="cart-modal-backdrop" hidden></div>
+        <section id="shopping-cart" class="shopping-cart cart-modal" aria-labelledby="shopping-cart-heading" hidden>
           <div class="cart-heading">
             <div>
               <span class="profile-label">RESUMEN DE COMPRA</span>
               <h3 id="shopping-cart-heading">Carrito de compra</h3>
             </div>
-            <span id="cart-count" class="cart-count" aria-live="polite">0 productos</span>
+            <div class="cart-heading-actions">
+              <span id="cart-count" class="cart-count" aria-live="polite">0 productos</span>
+              <button id="close-cart-button" class="saved-sets-close" type="button" aria-label="Cerrar carrito">×</button>
+            </div>
           </div>
           <div id="cart-items" class="cart-items" aria-live="polite"></div>
           <div id="cart-empty" class="cart-empty">Selecciona una prenda arriba para verla aquí.</div>
@@ -294,30 +368,176 @@
             <span>Total estimado</span>
             <strong id="cart-total">$0</strong>
           </div>
-          <p class="cart-note">El precio y la disponibilidad pueden cambiar. La compra se finaliza en Falabella.</p>
+          <p class="cart-note">Completa estos datos para revisar tu pedido. Este formulario es solo una demostración visual.</p>
+
+          <div class="checkout-details">
+            <div class="checkout-section-heading">
+              <h4>Contacto</h4>
+            </div>
+            <div class="checkout-form-grid">
+              <label class="checkout-field checkout-field-wide">Correo electrónico<input id="checkout-email" type="email" autocomplete="email" placeholder="correo@ejemplo.com"></label>
+              <label class="checkout-field">Teléfono<input id="checkout-contact-phone" type="tel" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" autocomplete="tel" placeholder="9 dígitos"></label>
+            </div>
+
+            <div class="checkout-section-heading">
+              <h4>Dirección de entrega</h4>
+              <label class="delivery-address-toggle">
+                <span>Usar dirección ya guardada</span>
+                <span class="switch-control">
+                  <input id="use-saved-address" type="checkbox">
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+            <div class="checkout-form-grid">
+              <label class="checkout-field checkout-field-wide">Nombre completo<input id="delivery-full-name" type="text" placeholder="Ej. Camila González"></label>
+              <label class="checkout-field">Dirección<input id="delivery-address" type="text" placeholder="Calle y número"></label>
+              <label class="checkout-field">Comuna<select id="delivery-commune" disabled><option value="">Selecciona tu comuna</option></select></label>
+              <label class="checkout-field">Región<select id="delivery-region"><option value="">Selecciona tu región</option></select></label>
+              <label class="checkout-field">Código postal<input id="delivery-postal-code" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="Código postal"></label>
+            </div>
+
+            <div class="checkout-section-heading checkout-payment-heading">
+              <h4>Datos de pago</h4>
+              <span class="payment-badge">Solo visual</span>
+            </div>
+            <div class="saved-payment-methods">
+              <div class="saved-payment-heading">
+                <span>Medios de pago guardados</span>
+                <span class="payment-badge">No se guarda el número completo</span>
+              </div>
+              <div id="saved-payment-methods-list" class="saved-payment-methods-list" aria-live="polite"></div>
+            </div>
+            <div id="payment-default-summary" class="payment-default-summary" aria-live="polite"></div>
+            <button id="add-payment-card-button" class="add-payment-method-button" type="button" aria-label="Añadir tarjeta">+</button>
+            <div id="payment-card-form-panel" class="payment-card-form-panel" hidden>
+              <div class="checkout-form-grid">
+                <label class="checkout-field checkout-field-wide">Número de tarjeta<input id="payment-card-number" type="text" inputmode="numeric" maxlength="16" pattern="[0-9]{16}" autocomplete="cc-number" placeholder="16 dígitos"></label>
+                <label class="checkout-field">Nombre en la tarjeta<input id="payment-card-holder" type="text" autocomplete="cc-name" placeholder="Nombre y apellido"></label>
+                <label class="checkout-field">Vencimiento<input id="payment-card-expiry" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" autocomplete="cc-exp" placeholder="MM/AA"></label>
+                <label class="checkout-field">CVV<input id="payment-card-cvv" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]{3}" autocomplete="cc-csc" placeholder="3 dígitos"></label>
+              </div>
+              <label class="payment-save-toggle">
+                <span>Guardar medio de pago</span>
+                <span class="switch-control">
+                  <input id="save-payment-method-toggle" type="checkbox">
+                  <span class="switch-slider" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+          </div>
           <button id="cart-checkout-button" class="primary-button cart-checkout-button" type="button" disabled>
-            <span>Continuar en Falabella</span>
-            <span aria-hidden="true">↗</span>
+            <span>Confirmar Pago</span>
+            <span aria-hidden="true">✓</span>
           </button>
         </section>
-      </section>
-
-      <section class="privacy-note">
-        <span class="lock-icon" aria-hidden="true">◈</span>
-        <p><strong>Análisis de color local; la prueba virtual se genera automáticamente al agregar prendas.</strong>
-          El perfil de color se analiza en Chrome. La búsqueda consulta productos
-          públicos de Falabella automáticamente cuando completas o cambias los
-          filtros de prendas.
-          Al solicitar la prueba virtual, tu foto y las imágenes seleccionadas
-          se envían a Google AI Studio para una edición generativa. El uso de la API puede
-          tener costo y no es un modelo especializado en ajuste de prendas.
-          Los conjuntos se guardan solo en este navegador.</p>
-      </section>
+        </section>
+      </div>
 
       <footer>
         <span>MATICES · ASESORÍA CROMÁTICA</span>
-        <span>La moda es tuya. La paleta, una invitación.</span>
       </footer>
     </main>
+    <div id="account-dialog-backdrop" class="account-dialog-backdrop" hidden></div>
+    <section id="profile-dialog" class="account-dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-dialog-title" hidden>
+      <div class="account-dialog-heading">
+        <div>
+          <span class="profile-label">CUENTA</span>
+          <h2 id="profile-dialog-title">Ver perfil</h2>
+        </div>
+        <button id="close-profile-dialog" class="saved-sets-close" type="button" aria-label="Cerrar perfil">×</button>
+      </div>
+      <div class="profile-avatar-preview">
+        <span id="profile-avatar-fallback" aria-hidden="true">A</span>
+        <img id="profile-avatar-image" alt="Logo del usuario admin" hidden>
+      </div>
+      <p class="account-dialog-copy">Usuario administrador con acceso completo a Matices.</p>
+      <label class="avatar-upload-button">
+        Cambiar logo del usuario
+        <input id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp">
+      </label>
+      <form id="profile-form" class="profile-form">
+        <label class="profile-gender-field">Género
+          <select id="profile-gender" name="gender">
+            <option value="">Selecciona tu género</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+          </select>
+        </label>
+        <div class="profile-form-grid">
+          <label>Nombre<input id="profile-name" name="name" type="text" autocomplete="given-name" placeholder="Nombre"></label>
+          <label>Primer apellido<input id="profile-first-surname" name="first-surname" type="text" autocomplete="family-name" placeholder="Primer apellido"></label>
+          <label>Segundo apellido<input id="profile-second-surname" name="second-surname" type="text" placeholder="Segundo apellido"></label>
+          <label>Mail<input id="profile-email" name="email" type="email" autocomplete="email" placeholder="Mail"></label>
+          <label>Número de teléfono<input id="profile-phone" name="phone" type="tel" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" autocomplete="tel" placeholder="9 dígitos"></label>
+        </div>
+        <div class="profile-address-heading">Dirección</div>
+        <div class="profile-form-grid profile-address-grid">
+          <label>Calle<input id="profile-street" name="street" type="text" autocomplete="street-address" placeholder="Calle"></label>
+          <label>Número<input id="profile-street-number" name="street-number" type="text" placeholder="Número"></label>
+          <label>Región
+            <select id="profile-region" name="region">
+              <option value="">Selecciona tu región</option>
+            </select>
+          </label>
+          <label id="profile-commune-field">Comuna <span class="profile-field-hint">(solo Región Metropolitana)</span>
+            <select id="profile-commune" name="commune" disabled>
+              <option value="">Selecciona tu comuna</option>
+            </select>
+          </label>
+          <label>Código postal<input id="profile-postal-code" name="postal-code" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="Código postal"></label>
+          <label>Domicilio
+            <select id="profile-home-type" name="home-type">
+              <option value="departamento">Departamento</option>
+              <option value="casa">Casa</option>
+              <option value="lote">Lote</option>
+              <option value="local">Local</option>
+              <option value="oficina">Oficina</option>
+              <option value="otro">Otro</option>
+            </select>
+          </label>
+          <label>Detalle del domicilio<input id="profile-home-detail" name="home-detail" type="text" placeholder="Departamento, casa, lote, local, etc."></label>
+        </div>
+        <button class="primary-button profile-save-button" type="submit">Guardar datos</button>
+        <p id="profile-save-status" class="profile-save-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section id="settings-dialog" class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-dialog-title" hidden>
+      <div class="account-dialog-heading">
+        <div>
+          <span class="profile-label">CUENTA</span>
+          <h2 id="settings-dialog-title">Configuración de usuario</h2>
+        </div>
+        <button id="close-settings-dialog" class="saved-sets-close" type="button" aria-label="Cerrar configuración">×</button>
+      </div>
+      <div class="account-settings-list">
+        <div><span>Usuario</span><strong>admin</strong></div>
+        <div><span>Rol</span><strong>Administrador</strong></div>
+        <div><span>Acceso</span><strong>Ilimitado</strong></div>
+      </div>
+    </section>
+    <section id="payment-dialog" class="account-dialog account-payment-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-dialog-title" hidden>
+      <div class="account-dialog-heading">
+        <div>
+          <span class="profile-label">CUENTA</span>
+          <h2 id="payment-dialog-title">Métodos de pago</h2>
+        </div>
+        <button id="close-payment-dialog" class="saved-sets-close" type="button" aria-label="Cerrar métodos de pago">×</button>
+      </div>
+      <p class="account-dialog-copy">Guarda tus tarjetas para tenerlas disponibles al revisar tus compras.</p>
+      <div id="account-saved-payment-methods-list" class="saved-payment-methods-list" aria-live="polite"></div>
+      <button id="add-payment-method-button" class="add-payment-method-button" type="button" aria-label="Añadir tarjeta">+</button>
+      <div id="account-payment-form-panel" class="account-payment-form-panel" hidden>
+        <div class="account-payment-form checkout-form-grid">
+          <label class="checkout-field checkout-field-wide">Número de tarjeta<input id="account-payment-card-number" type="text" inputmode="numeric" maxlength="16" pattern="[0-9]{16}" autocomplete="cc-number" placeholder="16 dígitos"></label>
+          <label class="checkout-field">Nombre en la tarjeta<input id="account-payment-card-holder" type="text" autocomplete="cc-name" placeholder="Nombre y apellido"></label>
+          <label class="checkout-field">Vencimiento<input id="account-payment-card-expiry" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" autocomplete="cc-exp" placeholder="MM/AA"></label>
+          <label class="checkout-field">CVV<input id="account-payment-card-cvv" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]{3}" autocomplete="cc-csc" placeholder="3 dígitos"></label>
+        </div>
+        <button id="account-save-payment-method-button" class="secondary-button save-payment-method-button" type="button">Guardar tarjeta</button>
+        <p id="account-payment-status" class="profile-save-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+    </div>
   </body>
 </html>

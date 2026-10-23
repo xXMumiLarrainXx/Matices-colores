@@ -10,17 +10,82 @@ const MODEL_URL =
 const WASM_URL =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MAX_FILE_SIZE = 12 * 1024 * 1024;
+const MAX_ANALYSIS_IMAGE_SIZE = 1200;
+const FALABELLA_CACHE_TTL = 2 * 60 * 1000;
+const CHILE_REGIONS = [
+  "Arica y Parinacota",
+  "Tarapacá",
+  "Antofagasta",
+  "Atacama",
+  "Coquimbo",
+  "Valparaíso",
+  "Región Metropolitana",
+  "O'Higgins",
+  "Maule",
+  "Ñuble",
+  "Biobío",
+  "La Araucanía",
+  "Los Ríos",
+  "Los Lagos",
+  "Aysén",
+  "Magallanes",
+];
+const METROPOLITAN_COMMUNES = [
+  "Alhué", "Buin", "Calera de Tango", "Cerrillos", "Cerro Navia",
+  "Colina", "Conchalí", "Curacaví", "El Bosque", "El Monte",
+  "Estación Central", "Huechuraba", "Independencia", "Isla de Maipo",
+  "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina",
+  "Lampa", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado",
+  "Macul", "Maipú", "María Pinto", "Melipilla", "Ñuñoa", "Padre Hurtado",
+  "Paine", "Pedro Aguirre Cerda", "Peñaflor", "Peñalolén", "Pirque",
+  "Providencia", "Pudahuel", "Puente Alto", "Quilicura", "Quinta Normal",
+  "Recoleta", "Renca", "San Bernardo", "San Joaquín", "San José de Maipo",
+  "San Miguel", "San Pedro", "San Ramón", "Santiago", "Talagante", "Tiltil",
+  "Vitacura",
+];
 
 const photoInput = document.querySelector("#photo-input");
+const loginOverlay = document.querySelector("#login-overlay");
+const loginForm = document.querySelector("#login-form");
+const loginUsername = document.querySelector("#login-username");
+const loginPassword = document.querySelector("#login-password");
+const rememberPassword = document.querySelector("#remember-password");
+const loginStatus = document.querySelector("#login-status");
+const appContent = document.querySelector("#app-content");
+const accountMenuButton = document.querySelector("#account-menu-button");
+const accountMenu = document.querySelector("#account-menu");
+const profileMenuButton = document.querySelector("#profile-menu-button");
+const settingsMenuButton = document.querySelector("#settings-menu-button");
+const logoutButton = document.querySelector("#logout-button");
+const accountDialogBackdrop = document.querySelector("#account-dialog-backdrop");
+const profileDialog = document.querySelector("#profile-dialog");
+const settingsDialog = document.querySelector("#settings-dialog");
+const paymentDialog = document.querySelector("#payment-dialog");
+const closeProfileDialog = document.querySelector("#close-profile-dialog");
+const closeSettingsDialog = document.querySelector("#close-settings-dialog");
+const closePaymentDialog = document.querySelector("#close-payment-dialog");
+const paymentMenuButton = document.querySelector("#payment-menu-button");
+const avatarInput = document.querySelector("#avatar-input");
+const accountAvatarImage = document.querySelector("#account-avatar-image");
+const accountAvatarFallback = document.querySelector("#account-avatar-fallback");
+const profileAvatarImage = document.querySelector("#profile-avatar-image");
+const profileAvatarFallback = document.querySelector("#profile-avatar-fallback");
+const profileForm = document.querySelector("#profile-form");
+const profileSaveStatus = document.querySelector("#profile-save-status");
+const welcomeOverlay = document.querySelector("#welcome-overlay");
 const dropzone = document.querySelector("#dropzone");
 const preview = document.querySelector("#preview");
+const autoColorAnalysis = document.querySelector("#auto-color-analysis");
+const analyzePhotoButton = document.querySelector("#analyze-photo-button");
 const cameraButton = document.querySelector("#camera-button");
 const cameraPanel = document.querySelector("#camera-panel");
 const cameraPreview = document.querySelector("#camera-preview");
 const captureButton = document.querySelector("#capture-button");
 const closeCameraButton = document.querySelector("#close-camera-button");
-const analyzeButton = document.querySelector("#analyze-button");
-const buttonLabel = document.querySelector("#button-label");
+const flowPrevious = document.querySelector("#flow-previous");
+const flowNext = document.querySelector("#flow-next");
+const flowSteps = [...document.querySelectorAll(".flow-step")];
+const flowSlides = [...document.querySelectorAll(".flow-slide")];
 const createOutfitStatus = document.querySelector("#create-outfit-status");
 const createdOutfit = document.querySelector("#created-outfit");
 const createdOutfitImage = document.querySelector("#created-outfit-image");
@@ -41,9 +106,15 @@ const garmentSizeSelect = document.querySelector("#garment-size");
 const garmentSizeLabel = document.querySelector("#garment-size-label");
 const garmentGenderSelect = document.querySelector("#garment-gender");
 const garmentTabs = [...document.querySelectorAll(".garment-tab")];
+const shoppingControls = document.querySelector(".shopping-controls");
+const filtersToggle = document.querySelector("#filters-toggle");
 const allColorsButton = document.querySelector("#all-colors-button");
 const falabellaHint = document.querySelector("#falabella-hint");
 const falabellaProducts = document.querySelector("#falabella-products");
+const productsPagination = document.querySelector(".products-pagination");
+const productsPrevious = document.querySelector("#products-previous");
+const productsNext = document.querySelector("#products-next");
+const productsPage = document.querySelector("#products-page");
 const mannequin = document.querySelector("#mannequin");
 const mannequinGenderImages = [...document.querySelectorAll(".mannequin-gender-image")];
 const mannequinTop = document.querySelector("#mannequin-torso");
@@ -74,11 +145,46 @@ const cartEmpty = document.querySelector("#cart-empty");
 const cartCount = document.querySelector("#cart-count");
 const cartTotal = document.querySelector("#cart-total");
 const cartCheckoutButton = document.querySelector("#cart-checkout-button");
+const cartModalBackdrop = document.querySelector("#cart-modal-backdrop");
+const shoppingCartSection = document.querySelector("#shopping-cart");
+const closeCartButton = document.querySelector("#close-cart-button");
+const savedPaymentMethodsList = document.querySelector("#saved-payment-methods-list");
+const paymentDefaultSummary = document.querySelector("#payment-default-summary");
+const addPaymentCardButton = document.querySelector("#add-payment-card-button");
+const paymentCardFormPanel = document.querySelector("#payment-card-form-panel");
+const savePaymentMethodToggle = document.querySelector("#save-payment-method-toggle");
+const paymentCardNumber = document.querySelector("#payment-card-number");
+const paymentCardHolder = document.querySelector("#payment-card-holder");
+const paymentCardExpiry = document.querySelector("#payment-card-expiry");
+const paymentCardCvv = document.querySelector("#payment-card-cvv");
+const accountSavedPaymentMethodsList = document.querySelector("#account-saved-payment-methods-list");
+const addPaymentMethodButton = document.querySelector("#add-payment-method-button");
+const accountPaymentFormPanel = document.querySelector("#account-payment-form-panel");
+const accountSavePaymentMethodButton = document.querySelector("#account-save-payment-method-button");
+const accountPaymentCardNumber = document.querySelector("#account-payment-card-number");
+const accountPaymentCardHolder = document.querySelector("#account-payment-card-holder");
+const accountPaymentCardExpiry = document.querySelector("#account-payment-card-expiry");
+const accountPaymentCardCvv = document.querySelector("#account-payment-card-cvv");
+const accountPaymentStatus = document.querySelector("#account-payment-status");
+const useSavedAddress = document.querySelector("#use-saved-address");
+const deliveryFullName = document.querySelector("#delivery-full-name");
+const deliveryAddress = document.querySelector("#delivery-address");
+const deliveryCommune = document.querySelector("#delivery-commune");
+const deliveryRegion = document.querySelector("#delivery-region");
+const deliveryPostalCode = document.querySelector("#delivery-postal-code");
+const checkoutEmail = document.querySelector("#checkout-email");
+const checkoutContactPhone = document.querySelector("#checkout-contact-phone");
+const profilePhone = document.querySelector("#profile-phone");
+const profileRegion = document.querySelector("#profile-region");
+const profileGender = document.querySelector("#profile-gender");
+const profileCommune = document.querySelector("#profile-commune");
+const profileCommuneField = document.querySelector("#profile-commune-field");
 
 // ---------------------------------------------------------------------------
 // Estado de la interfaz: fotografías, perfil de color y búsqueda de productos
 // ---------------------------------------------------------------------------
 let selectedFile = null;
+let selectedPhotoSource = null;
 let previewUrl = null;
 let faceLandmarkerPromise = null;
 let recommendedColors = [];
@@ -86,8 +192,10 @@ let selectedColor = null;
 let allColorsSelected = false;
 let showAllColors = false;
 let falabellaProductResults = [];
+let falabellaProductPage = 0;
 let falabellaSearchController = null;
 let falabellaSearchGeneration = 0;
+const falabellaSearchCache = new Map();
 let colorAvailabilityController = null;
 let colorAvailabilityGeneration = 0;
 let colorAvailabilityTimer = null;
@@ -105,10 +213,12 @@ let createdImageData = "";
 let cameraStream = null;
 let selectedOutfit = [];
 let shoppingCart = [];
+let activeFlowSlide = "analysis";
 let savedOutfits = [];
 let photoSkinRgb = null;
 let mannequinArtworkGeneration = 0;
 let renderedMannequinUrl = "";
+const mannequinLayerCache = new Map();
 let clothingSegmenterPromise = null;
 let mannequinOutfitGeneration = 0;
 const garmentCutoutCache = new Map();
@@ -152,6 +262,8 @@ const garmentTypes = {
   "all-hombre-lower": { label: "Prenda inferior", searchTerms: ["ropa inferior"], gender: "hombre", tab: "lower", category: "bottoms", all: true },
   "all-mujer-upper": { label: "Prenda superior", searchTerms: ["ropa superior"], gender: "mujer", tab: "upper", category: "tops", all: true },
   "all-mujer-lower": { label: "Prenda inferior", searchTerms: ["ropa inferior"], gender: "mujer", tab: "lower", category: "bottoms", all: true },
+  "all-genders-upper": { label: "Prendas superiores", searchTerms: ["ropa superior"], gender: "todos", tab: "upper", category: "tops", all: true },
+  "all-genders-lower": { label: "Prendas inferiores", searchTerms: ["ropa inferior"], gender: "todos", tab: "lower", category: "bottoms", all: true },
 };
 
 const palette = [
@@ -182,9 +294,679 @@ function setStatus(message, isError = false) {
   status.classList.toggle("error", isError);
 }
 
-function setBusy(isBusy) {
-  analyzeButton.disabled = isBusy || !selectedFile;
-  buttonLabel.textContent = isBusy ? "Analizando fotografía…" : "Analizar mi paleta";
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "admin123";
+const LOGIN_CREDENTIALS_KEY = "matices-login-credentials";
+const PROFILE_AVATAR_KEY = "matices-admin-avatar";
+const PROFILE_DATA_KEY = "matices-admin-profile";
+const AUTO_COLOR_ANALYSIS_KEY = "matices-auto-color-analysis";
+const SAVED_PAYMENT_METHODS_KEY = "matices-saved-payment-methods";
+let isAuthenticated = false;
+let welcomeDismissTimer = null;
+let lastAutofilledDeliveryValues = null;
+let savedPaymentMethods = [];
+
+function scheduleWelcomeDismissal() {
+  window.clearTimeout(welcomeDismissTimer);
+  welcomeDismissTimer = window.setTimeout(closeWelcomeOverlay, 2000);
+}
+
+function setAvatarImage(dataUrl) {
+  const hasImage = Boolean(dataUrl);
+  [accountAvatarImage, profileAvatarImage].forEach((image) => {
+    image.src = dataUrl || "";
+    image.hidden = !hasImage;
+  });
+  accountAvatarFallback.hidden = hasImage;
+  profileAvatarFallback.hidden = hasImage;
+}
+
+function closeAccountDialogs() {
+  accountMenu.hidden = true;
+  accountMenuButton.setAttribute("aria-expanded", "false");
+  profileDialog.hidden = true;
+  settingsDialog.hidden = true;
+  paymentDialog.hidden = true;
+  accountDialogBackdrop.hidden = true;
+  document.body.classList.remove("account-dialog-open");
+}
+
+function openAccountDialog(dialog) {
+  accountMenu.hidden = true;
+  accountMenuButton.setAttribute("aria-expanded", "false");
+  profileDialog.hidden = dialog !== profileDialog;
+  settingsDialog.hidden = dialog !== settingsDialog;
+  paymentDialog.hidden = dialog !== paymentDialog;
+  accountDialogBackdrop.hidden = false;
+  document.body.classList.add("account-dialog-open");
+  if (dialog === paymentDialog) accountPaymentFormPanel.hidden = true;
+  dialog.querySelector("button")?.focus();
+}
+
+function logout() {
+  isAuthenticated = false;
+  closeAccountDialogs();
+  appContent.hidden = true;
+  loginForm.reset();
+  loadSavedLogin();
+  loginStatus.textContent = "";
+  loginOverlay.hidden = true;
+  welcomeOverlay.classList.remove("is-closing");
+  welcomeOverlay.hidden = false;
+  document.body.classList.remove("account-dialog-open", "login-open");
+  document.body.classList.add("welcome-open");
+  welcomeOverlay.focus();
+  scheduleWelcomeDismissal();
+}
+
+function loadSavedAvatar() {
+  try {
+    setAvatarImage(localStorage.getItem(PROFILE_AVATAR_KEY) || "");
+  } catch {
+    setAvatarImage("");
+  }
+}
+
+function loadSavedProfile() {
+  try {
+    const savedProfile = JSON.parse(localStorage.getItem(PROFILE_DATA_KEY) || "{}");
+    for (const [key, value] of Object.entries(savedProfile)) {
+      const field = profileForm.elements.namedItem(key);
+      if (field && typeof value === "string") field.value = value;
+    }
+  } catch {
+    profileForm.reset();
+  }
+  limitPhoneDigits(profilePhone);
+  updateProfileCommuneVisibility();
+}
+
+function populateLocationOptions() {
+  const savedProfileRegion = profileRegion.value;
+  const savedDeliveryRegion = deliveryRegion.value;
+  const savedCommune = profileCommune.value;
+
+  for (const select of [profileRegion, deliveryRegion]) {
+    select.replaceChildren(new Option("Selecciona tu región", ""));
+    for (const region of CHILE_REGIONS) {
+      select.append(new Option(region, region));
+    }
+  }
+
+  profileCommune.replaceChildren(new Option("Selecciona tu comuna", ""));
+  for (const commune of METROPOLITAN_COMMUNES) {
+    profileCommune.append(new Option(commune, commune));
+  }
+
+  deliveryCommune.replaceChildren(new Option("Selecciona tu comuna", ""));
+  for (const commune of METROPOLITAN_COMMUNES) {
+    deliveryCommune.append(new Option(commune, commune));
+  }
+
+  profileRegion.value = savedProfileRegion;
+  deliveryRegion.value = savedDeliveryRegion;
+  profileCommune.value = savedCommune;
+  updateDeliveryCommuneVisibility();
+}
+
+function updateProfileCommuneVisibility() {
+  const isMetropolitan = profileRegion.value === "Región Metropolitana";
+  profileCommuneField.hidden = false;
+  profileCommune.disabled = !isMetropolitan;
+  if (!isMetropolitan) profileCommune.value = "";
+}
+
+function updateDeliveryCommuneVisibility() {
+  const isMetropolitan = deliveryRegion.value === "Región Metropolitana";
+  deliveryCommune.disabled = !isMetropolitan;
+  if (!isMetropolitan) deliveryCommune.value = "";
+}
+
+function limitPhoneDigits(field) {
+  field.value = field.value.replace(/\D/g, "").slice(0, 9);
+}
+
+function limitCardNumberDigits(field) {
+  field.value = field.value.replace(/\D/g, "").slice(0, 16);
+}
+
+function limitCvvDigits(field) {
+  field.value = field.value.replace(/\D/g, "").slice(0, 3);
+}
+
+function formatCardExpiry(field) {
+  const digits = field.value.replace(/\D/g, "").slice(0, 4);
+  field.value = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+}
+
+function readSavedProfile() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_DATA_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function fillDeliveryAddressFromProfile() {
+  const profile = readSavedProfile();
+  const fullName = [profile.name, profile["first-surname"], profile["second-surname"]]
+    .filter(Boolean)
+    .join(" ");
+  const address = [
+    profile.street,
+    profile["street-number"],
+    profile["home-type"],
+    profile["home-detail"],
+  ].filter(Boolean).join(", ");
+  const values = {
+    fullName,
+    address,
+    commune: profile.region === "Región Metropolitana" ? profile.commune || "" : "",
+    region: profile.region || "",
+    postalCode: profile["postal-code"] || "",
+  };
+  deliveryFullName.value = values.fullName;
+  deliveryAddress.value = values.address;
+  deliveryRegion.value = values.region;
+  updateDeliveryCommuneVisibility();
+  deliveryCommune.value = values.commune;
+  deliveryPostalCode.value = values.postalCode;
+  lastAutofilledDeliveryValues = values;
+  return Boolean(values.address);
+}
+
+function fillCheckoutContactFromProfile() {
+  const profile = readSavedProfile();
+  if (profile.email) checkoutEmail.value = profile.email;
+  if (profile.phone) {
+    checkoutContactPhone.value = profile.phone;
+    limitPhoneDigits(checkoutContactPhone);
+  }
+}
+
+function clearAutofilledDeliveryAddress() {
+  if (!lastAutofilledDeliveryValues) return;
+  if (deliveryFullName.value === lastAutofilledDeliveryValues.fullName) deliveryFullName.value = "";
+  if (deliveryAddress.value === lastAutofilledDeliveryValues.address) deliveryAddress.value = "";
+  if (deliveryCommune.value === lastAutofilledDeliveryValues.commune) deliveryCommune.value = "";
+  if (deliveryRegion.value === lastAutofilledDeliveryValues.region) deliveryRegion.value = "";
+  if (deliveryPostalCode.value === lastAutofilledDeliveryValues.postalCode) deliveryPostalCode.value = "";
+  lastAutofilledDeliveryValues = null;
+}
+
+function loadSavedLogin() {
+  try {
+    const savedLogin = JSON.parse(localStorage.getItem(LOGIN_CREDENTIALS_KEY) || "{}");
+    if (typeof savedLogin.username === "string") loginUsername.value = savedLogin.username;
+    if (typeof savedLogin.password === "string") loginPassword.value = savedLogin.password;
+    rememberPassword.checked = Boolean(savedLogin.username && savedLogin.password);
+  } catch {
+    rememberPassword.checked = false;
+  }
+}
+
+function loadSavedPaymentMethods() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SAVED_PAYMENT_METHODS_KEY) || "[]");
+    savedPaymentMethods = Array.isArray(saved) ? saved : [];
+    if (savedPaymentMethods.length && !savedPaymentMethods.some((method) => method.isDefault)) {
+      savedPaymentMethods[0].isDefault = true;
+      localStorage.setItem(SAVED_PAYMENT_METHODS_KEY, JSON.stringify(savedPaymentMethods));
+    }
+  } catch {
+    savedPaymentMethods = [];
+  }
+  renderSavedPaymentMethods();
+  renderSavedPaymentMethods(accountSavedPaymentMethodsList, {
+    number: accountPaymentCardNumber,
+    holder: accountPaymentCardHolder,
+    expiry: accountPaymentCardExpiry,
+    cvv: accountPaymentCardCvv,
+    status: accountPaymentStatus,
+  });
+  updatePaymentDefaultSummary();
+}
+
+function renderSavedPaymentMethods(target = savedPaymentMethodsList, fields = {
+  number: paymentCardNumber,
+  holder: paymentCardHolder,
+  expiry: paymentCardExpiry,
+  cvv: paymentCardCvv,
+  status: null,
+}) {
+  target.replaceChildren();
+  if (!savedPaymentMethods.length) {
+    const empty = document.createElement("span");
+    empty.className = "saved-payment-empty";
+    empty.textContent = "Aún no tienes medios de pago guardados.";
+    target.append(empty);
+    if (target === savedPaymentMethodsList) {
+      const addButton = document.createElement("button");
+      addButton.type = "button";
+      addButton.className = "secondary-button save-payment-method-button";
+      addButton.textContent = "Añadir medio de pago";
+      addButton.addEventListener("click", () => addPaymentCardButton.click());
+      target.append(addButton);
+    }
+    return;
+  }
+  for (const method of savedPaymentMethods) {
+    const row = document.createElement("article");
+    row.className = "saved-payment-method";
+    const info = document.createElement("div");
+    info.className = "saved-payment-method-info";
+    const title = document.createElement("strong");
+    title.textContent = `${method.brand} terminada en ${method.last4}`;
+    const details = document.createElement("span");
+    details.textContent = `${method.holder} · Vence ${method.expiry}${method.isDefault ? " · Predeterminada" : ""}`;
+    info.append(title, details);
+    const actions = document.createElement("div");
+    actions.className = "saved-payment-method-actions";
+    const useButton = document.createElement("button");
+    useButton.type = "button";
+    useButton.textContent = method.isDefault ? "Predeterminada" : "Usar";
+    useButton.setAttribute("aria-pressed", String(Boolean(method.isDefault)));
+    useButton.addEventListener("click", () => {
+      setDefaultPaymentMethod(method.id);
+      fillPaymentFields(fields, method);
+      if (target === savedPaymentMethodsList) paymentCardFormPanel.hidden = true;
+    });
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "Quitar";
+    removeButton.addEventListener("click", () => {
+      savedPaymentMethods = savedPaymentMethods.filter((entry) => entry.id !== method.id);
+      if (savedPaymentMethods.length && !savedPaymentMethods.some((entry) => entry.isDefault)) {
+        savedPaymentMethods[0].isDefault = true;
+      }
+      localStorage.setItem(SAVED_PAYMENT_METHODS_KEY, JSON.stringify(savedPaymentMethods));
+      renderSavedPaymentMethods();
+      renderSavedPaymentMethods(accountSavedPaymentMethodsList, {
+        number: accountPaymentCardNumber,
+        holder: accountPaymentCardHolder,
+        expiry: accountPaymentCardExpiry,
+        cvv: accountPaymentCardCvv,
+        status: accountPaymentStatus,
+      });
+    });
+    actions.append(useButton, removeButton);
+    row.append(info, actions);
+    target.append(row);
+  }
+}
+
+function fillPaymentFields(fields, method) {
+  fields.number.value = `•••• •••• •••• ${method.last4}`;
+  fields.holder.value = method.holder;
+  fields.expiry.value = method.expiry;
+  fields.cvv.value = "";
+}
+
+function updatePaymentDefaultSummary() {
+  const defaultMethod = savedPaymentMethods.find((method) => method.isDefault);
+  paymentDefaultSummary.textContent = defaultMethod
+    ? `Medio predeterminado: ${defaultMethod.brand} terminada en ${defaultMethod.last4}`
+    : "Selecciona un medio guardado o añade una tarjeta nueva.";
+  if (defaultMethod) {
+    fillPaymentFields({
+      number: paymentCardNumber,
+      holder: paymentCardHolder,
+      expiry: paymentCardExpiry,
+      cvv: paymentCardCvv,
+    }, defaultMethod);
+    paymentCardFormPanel.hidden = true;
+  } else {
+    paymentCardNumber.value = "";
+    paymentCardHolder.value = "";
+    paymentCardExpiry.value = "";
+    paymentCardCvv.value = "";
+  }
+}
+
+function setDefaultPaymentMethod(id) {
+  savedPaymentMethods = savedPaymentMethods.map((method) => ({
+    ...method,
+    isDefault: method.id === id,
+  }));
+  localStorage.setItem(SAVED_PAYMENT_METHODS_KEY, JSON.stringify(savedPaymentMethods));
+  renderSavedPaymentMethods();
+  renderSavedPaymentMethods(accountSavedPaymentMethodsList, {
+    number: accountPaymentCardNumber,
+    holder: accountPaymentCardHolder,
+    expiry: accountPaymentCardExpiry,
+    cvv: accountPaymentCardCvv,
+    status: accountPaymentStatus,
+  });
+  updatePaymentDefaultSummary();
+}
+
+async function savePaymentMethod() {
+  const cardNumber = paymentCardNumber.value.replace(/\D/g, "");
+  const holder = paymentCardHolder.value.trim();
+  const expiry = paymentCardExpiry.value.trim();
+  return savePaymentMethodData(cardNumber, holder, expiry, paymentCardCvv, (message, isError) => setStatus(message, isError));
+}
+
+async function savePaymentMethodData(cardNumber, holder, expiry, cvvField, showStatus) {
+  const cvv = cvvField.value.replace(/\D/g, "");
+  if (cardNumber.length !== 16 || !holder || !/^((0[1-9])|(1[0-2]))\/\d{2}$/.test(expiry) || cvv.length !== 3) {
+    showStatus("Completa una tarjeta de 16 dígitos, vencimiento MM/AA y CVV de 3 dígitos.", true);
+    return false;
+  }
+  const fingerprintBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(cardNumber),
+  );
+  const fingerprint = [...new Uint8Array(fingerprintBuffer)]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+  if (savedPaymentMethods.some((method) =>
+    method.fingerprint === fingerprint
+    || (!method.fingerprint && method.last4 === cardNumber.slice(-4)))) {
+    showStatus("Esta tarjeta ya está guardada en esta cuenta.", true);
+    return false;
+  }
+  const brand = cardNumber.startsWith("4")
+    ? "Visa"
+    : cardNumber.startsWith("5")
+      ? "Mastercard"
+      : "Tarjeta";
+  savedPaymentMethods.unshift({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    fingerprint,
+    brand,
+    last4: cardNumber.slice(-4),
+    holder,
+    expiry,
+    isDefault: savedPaymentMethods.length === 0,
+  });
+  localStorage.setItem(SAVED_PAYMENT_METHODS_KEY, JSON.stringify(savedPaymentMethods));
+  renderSavedPaymentMethods();
+  renderSavedPaymentMethods(accountSavedPaymentMethodsList, {
+    number: accountPaymentCardNumber,
+    holder: accountPaymentCardHolder,
+    expiry: accountPaymentCardExpiry,
+    cvv: accountPaymentCardCvv,
+    status: accountPaymentStatus,
+  });
+  updatePaymentDefaultSummary();
+  cvvField.value = "";
+  showStatus("Medio de pago guardado de forma segura en este navegador.");
+  return true;
+}
+
+async function saveAccountPaymentMethod() {
+  const cardNumber = accountPaymentCardNumber.value.replace(/\D/g, "");
+  const holder = accountPaymentCardHolder.value.trim();
+  const expiry = accountPaymentCardExpiry.value.trim();
+  const saved = await savePaymentMethodData(cardNumber, holder, expiry, accountPaymentCardCvv, (message, isError) => {
+    accountPaymentStatus.textContent = message;
+    accountPaymentStatus.classList.toggle("error", Boolean(isError));
+  });
+  if (saved) {
+    accountPaymentCardNumber.value = "";
+    accountPaymentCardHolder.value = "";
+    accountPaymentCardExpiry.value = "";
+    accountPaymentCardCvv.value = "";
+    accountPaymentFormPanel.hidden = true;
+    addPaymentMethodButton.focus();
+  }
+}
+
+function updateColorAnalysisMode() {
+  analyzePhotoButton.hidden = autoColorAnalysis.checked || !selectedFile;
+}
+
+async function useProfilePhotoForAnalysis(dataUrl = "") {
+  const profilePhoto = dataUrl || localStorage.getItem(PROFILE_AVATAR_KEY) || "";
+  if (!profilePhoto) {
+    updateColorAnalysisMode();
+    setStatus("Añade una foto de perfil para detectar tus colores automáticamente.", true);
+    return false;
+  }
+
+  try {
+    const response = await fetch(profilePhoto);
+    const blob = await response.blob();
+    const file = new File([blob], "foto-perfil.jpg", {
+      type: blob.type || "image/jpeg",
+    });
+    acceptFile(file, "profile");
+    return true;
+  } catch {
+    setStatus("No se pudo usar la foto de perfil. Inténtalo de nuevo.", true);
+    return false;
+  }
+}
+
+function clearSelectedPhoto() {
+  stopCamera();
+  selectedFile = null;
+  selectedPhotoSource = null;
+  photoSkinRgb = null;
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+  }
+  preview.src = "";
+  preview.hidden = true;
+  dropzone.classList.remove("has-preview");
+  emptyState.hidden = false;
+  resultMessage.hidden = true;
+  resultContent.hidden = true;
+  shoppingPanel.hidden = true;
+  selectedOutfit = [];
+  shoppingCart = [];
+  renderSelectedOutfit();
+  updateColorAnalysisMode();
+}
+
+function loadColorAnalysisSetting() {
+  autoColorAnalysis.checked = localStorage.getItem(AUTO_COLOR_ANALYSIS_KEY) !== "false";
+  updateColorAnalysisMode();
+}
+
+function syncProfileGenderToFilters() {
+  if (!autoColorAnalysis.checked) return;
+  const genderMap = { Masculino: "hombre", Femenino: "mujer" };
+  const filterGender = genderMap[profileGender.value] || "";
+  if (garmentGenderSelect.value === filterGender) return;
+  garmentGenderSelect.value = filterGender;
+  garmentGenderSelect.dispatchEvent(new Event("change"));
+}
+
+function closeLoginOverlay() {
+  loginOverlay.hidden = true;
+  document.body.classList.remove("login-open");
+  appContent.hidden = false;
+  if (autoColorAnalysis.checked) useProfilePhotoForAnalysis();
+}
+
+function handleLogin(event) {
+  event.preventDefault();
+  const username = loginUsername.value.trim().toLowerCase();
+  const password = loginPassword.value;
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    loginStatus.textContent = "Usuario o contraseña incorrectos.";
+    loginPassword.select();
+    return;
+  }
+  if (rememberPassword.checked) {
+    localStorage.setItem(
+      LOGIN_CREDENTIALS_KEY,
+      JSON.stringify({ username, password }),
+    );
+  } else {
+    localStorage.removeItem(LOGIN_CREDENTIALS_KEY);
+  }
+  isAuthenticated = true;
+  loginStatus.textContent = "";
+  closeLoginOverlay();
+}
+
+function closeWelcomeOverlay() {
+  if (welcomeOverlay.hidden || welcomeOverlay.classList.contains("is-closing")) return;
+  window.clearTimeout(welcomeDismissTimer);
+  welcomeOverlay.classList.add("is-closing");
+  document.body.classList.remove("welcome-open");
+  window.setTimeout(() => {
+    welcomeOverlay.hidden = true;
+    if (!isAuthenticated) {
+      loginOverlay.hidden = false;
+      document.body.classList.add("login-open");
+      loginUsername.focus();
+    }
+  }, 450);
+}
+
+welcomeOverlay.addEventListener("click", closeWelcomeOverlay);
+welcomeOverlay.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") closeWelcomeOverlay();
+});
+loginForm.addEventListener("submit", handleLogin);
+accountMenuButton.addEventListener("click", () => {
+  const isOpen = !accountMenu.hidden;
+  accountMenu.hidden = isOpen;
+  accountMenuButton.setAttribute("aria-expanded", String(!isOpen));
+});
+profileMenuButton.addEventListener("click", () => openAccountDialog(profileDialog));
+paymentMenuButton.addEventListener("click", () => openAccountDialog(paymentDialog));
+settingsMenuButton.addEventListener("click", () => openAccountDialog(settingsDialog));
+logoutButton.addEventListener("click", logout);
+closeProfileDialog.addEventListener("click", closeAccountDialogs);
+closeSettingsDialog.addEventListener("click", closeAccountDialogs);
+closePaymentDialog.addEventListener("click", closeAccountDialogs);
+accountDialogBackdrop.addEventListener("click", closeAccountDialogs);
+avatarInput.addEventListener("change", () => {
+  const [file] = avatarInput.files || [];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    if (typeof reader.result !== "string") return;
+    setAvatarImage(reader.result);
+    localStorage.setItem(PROFILE_AVATAR_KEY, reader.result);
+    if (autoColorAnalysis.checked) useProfilePhotoForAnalysis(reader.result);
+  });
+  reader.readAsDataURL(file);
+});
+profileForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const profile = Object.fromEntries(new FormData(profileForm).entries());
+  localStorage.setItem(PROFILE_DATA_KEY, JSON.stringify(profile));
+  profileSaveStatus.textContent = "Datos guardados correctamente.";
+  if (useSavedAddress.checked) fillDeliveryAddressFromProfile();
+  fillCheckoutContactFromProfile();
+  syncProfileGenderToFilters();
+});
+profileRegion.addEventListener("change", updateProfileCommuneVisibility);
+deliveryRegion.addEventListener("change", updateDeliveryCommuneVisibility);
+profileGender.addEventListener("change", syncProfileGenderToFilters);
+profilePhone.addEventListener("input", () => limitPhoneDigits(profilePhone));
+checkoutContactPhone.addEventListener("input", () => limitPhoneDigits(checkoutContactPhone));
+paymentCardNumber.addEventListener("input", () => limitCardNumberDigits(paymentCardNumber));
+accountPaymentCardNumber.addEventListener("input", () => limitCardNumberDigits(accountPaymentCardNumber));
+paymentCardCvv.addEventListener("input", () => limitCvvDigits(paymentCardCvv));
+accountPaymentCardCvv.addEventListener("input", () => limitCvvDigits(accountPaymentCardCvv));
+paymentCardExpiry.addEventListener("input", () => formatCardExpiry(paymentCardExpiry));
+accountPaymentCardExpiry.addEventListener("input", () => formatCardExpiry(accountPaymentCardExpiry));
+useSavedAddress.addEventListener("change", () => {
+  if (useSavedAddress.checked) {
+    if (!fillDeliveryAddressFromProfile()) {
+      useSavedAddress.checked = false;
+      setStatus("Guarda primero una dirección en Ver perfil.", true);
+    }
+  } else {
+    clearAutofilledDeliveryAddress();
+  }
+});
+autoColorAnalysis.addEventListener("change", async () => {
+  localStorage.setItem(AUTO_COLOR_ANALYSIS_KEY, String(autoColorAnalysis.checked));
+  if (autoColorAnalysis.checked) {
+    await useProfilePhotoForAnalysis();
+    syncProfileGenderToFilters();
+  } else if (selectedPhotoSource === "profile") {
+    clearSelectedPhoto();
+    setStatus("Foto de perfil quitada de la detección de colores.");
+  } else {
+    updateColorAnalysisMode();
+  }
+});
+analyzePhotoButton.addEventListener("click", () => {
+  if (!selectedFile) return;
+  setStatus("Analizando tu foto…");
+  analyzePhoto();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeAccountDialogs();
+});
+loadSavedAvatar();
+populateLocationOptions();
+loadSavedProfile();
+loadSavedLogin();
+loadColorAnalysisSetting();
+syncProfileGenderToFilters();
+appContent.hidden = true;
+loginOverlay.hidden = true;
+document.body.classList.add("welcome-open");
+welcomeOverlay.focus();
+scheduleWelcomeDismissal();
+
+function updateFlowNavigation() {
+  const shoppingReady = !shoppingPanel.hidden;
+  const paymentReady = shoppingCart.length > 0;
+  const activeIndex = flowSlides.findIndex((slide) => slide.dataset.flowSlide === activeFlowSlide);
+  flowPrevious.disabled = activeIndex <= 0;
+  const nextTarget = flowSlides[activeIndex + 1]?.dataset.flowSlide;
+  flowNext.disabled = activeIndex < 0
+    || activeIndex >= flowSlides.length - 1
+    || (nextTarget === "shopping" && !shoppingReady)
+    || (nextTarget === "payment" && !paymentReady);
+  flowSteps.forEach((step) => {
+    const isActive = step.dataset.flowTarget === activeFlowSlide;
+    const stepTarget = step.dataset.flowTarget;
+    const isComplete = (stepTarget === "analysis" && activeFlowSlide !== "analysis")
+      || (stepTarget === "shopping" && activeFlowSlide === "payment");
+    step.classList.toggle("is-active", isActive);
+    step.classList.toggle("is-complete", isComplete);
+    step.setAttribute("aria-current", isActive ? "step" : "false");
+    step.disabled = stepTarget === "shopping"
+      ? !shoppingReady
+      : stepTarget === "payment"
+        ? !paymentReady
+        : false;
+  });
+}
+
+function showFlowSlide(target, shouldFocus = false) {
+  if (target === "shopping" && shoppingPanel.hidden) return;
+  if (target === "payment" && !shoppingCart.length) return;
+  const nextSlide = flowSlides.find((slide) => slide.dataset.flowSlide === target);
+  if (!nextSlide) return;
+  activeFlowSlide = target;
+  if (target === "payment") {
+    useSavedAddress.checked = true;
+    fillDeliveryAddressFromProfile();
+    fillCheckoutContactFromProfile();
+  }
+  flowSlides.forEach((slide) => {
+    const isActive = slide === nextSlide;
+    slide.classList.toggle("is-active", isActive);
+    slide.setAttribute("aria-hidden", String(!isActive));
+  });
+  shoppingCartSection.hidden = target !== "payment";
+  cartModalBackdrop.hidden = true;
+  document.body.classList.remove("modal-open");
+  updateFlowNavigation();
+  if (shouldFocus) {
+    nextSlide.querySelector("h2")?.focus?.();
+    nextSlide.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function moveFlowSlide(offset) {
+  const currentIndex = flowSlides.findIndex((slide) => slide.dataset.flowSlide === activeFlowSlide);
+  const nextSlide = flowSlides[currentIndex + offset];
+  if (nextSlide) showFlowSlide(nextSlide.dataset.flowSlide, true);
 }
 
 function setCreateOutfitStatus(message, isError = false) {
@@ -251,7 +1033,7 @@ function closeSavedSets() {
   savedSetsButton.focus();
 }
 
-function acceptFile(file) {
+function acceptFile(file, source = "upload") {
   if (!file) return;
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
     setStatus("Elige una imagen JPG, PNG o WEBP.", true);
@@ -264,6 +1046,7 @@ function acceptFile(file) {
 
   stopCamera();
   selectedFile = file;
+  selectedPhotoSource = source;
   photoSkinRgb = null;
   updateMannequinGender();
   if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -276,12 +1059,18 @@ function acceptFile(file) {
   resultMessage.classList.remove("error");
   resultContent.hidden = true;
   shoppingPanel.hidden = true;
+  showFlowSlide("analysis");
   selectedOutfit = [];
   shoppingCart = [];
   renderSelectedOutfit();
   scheduleAutomaticTryOn();
-  setBusy(false);
-  setStatus("Foto lista. Al analizarla, la imagen permanecerá en este navegador.");
+  if (autoColorAnalysis.checked) {
+    setStatus("Analizando tu foto automáticamente…");
+    analyzePhoto();
+  } else {
+    setStatus("Foto lista. Presiona el botón para detectar tus colores.");
+    updateColorAnalysisMode();
+  }
 }
 
 photoInput.addEventListener("change", () => acceptFile(photoInput.files[0]));
@@ -386,7 +1175,7 @@ function getFaceLandmarker() {
 // Muestreo facial y métricas cromáticas
 // ---------------------------------------------------------------------------
 function canvasFromImage(image) {
-  const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+  const scale = Math.min(1, MAX_ANALYSIS_IMAGE_SIZE / Math.max(image.naturalWidth, image.naturalHeight));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(image.naturalWidth * scale);
   canvas.height = Math.round(image.naturalHeight * scale);
@@ -566,13 +1355,14 @@ function renderRecommendations(skin) {
     paletteElement.append(row);
   }
   recommendedColors = ranked;
-  selectedColor = ranked[0] || null;
-  allColorsSelected = false;
+  selectedColor = null;
+  allColorsSelected = true;
   showAllColors = false;
   falabellaProductResults = [];
   renderGarmentTypeOptions();
   resetSizeOptions();
   shoppingPanel.hidden = false;
+  updateFlowNavigation();
   renderGarmentColors();
   renderFalabellaFilters();
 }
@@ -611,51 +1401,40 @@ function toggleColorPalette() {
 function renderGarmentTypeOptions(selectAll = false) {
   const previousType = garmentTypeSelect.value;
   const gender = garmentGenderSelect.value;
+  const genders = !gender || gender === "todos" ? ["hombre", "mujer"] : [gender];
   garmentTypeSelect.replaceChildren();
-  if (!gender) {
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Selecciona un género primero";
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    garmentTypeSelect.append(placeholder);
-    garmentTypeSelect.disabled = true;
-  } else {
-    garmentTypeSelect.disabled = false;
-  }
+  garmentTypeSelect.disabled = false;
   const types = Object.entries(garmentTypes)
     .filter(([, garment]) =>
       garment.tab === activeGarmentTab
-      && garment.gender === gender
+      && genders.includes(garment.gender)
       && !garment.all,
     )
     .map(([value]) => value);
   const allType = Object.keys(garmentTypes).find((value) => {
     const garment = garmentTypes[value];
     return garment.tab === activeGarmentTab
-      && garment.gender === gender
+      && (!gender || gender === "todos"
+        ? garment.gender === "todos"
+        : garment.gender === gender)
       && garment.all;
   });
-  if (gender && allType) {
+  if (allType) {
     const option = document.createElement("option");
     option.value = allType;
     option.textContent = "Todos";
     garmentTypeSelect.append(option);
   }
   for (const [value, garment] of Object.entries(garmentTypes)) {
-    if (garment.tab !== activeGarmentTab || garment.gender !== gender || garment.all) continue;
+    if (garment.tab !== activeGarmentTab || !genders.includes(garment.gender) || garment.all) continue;
     const option = document.createElement("option");
     option.value = value;
     option.textContent = garment.label;
     garmentTypeSelect.append(option);
   }
-  if (gender) {
-    garmentTypeSelect.value =
-      !selectAll && types.includes(previousType) ? previousType : allType;
-  }
-  garmentSizeLabel.textContent = activeGarmentTab === "upper"
-    ? "TALLA SUPERIOR VERIFICADA"
-    : "TALLA INFERIOR VERIFICADA";
+  garmentTypeSelect.value =
+    !selectAll && types.includes(previousType) ? previousType : allType || types[0] || "";
+  garmentSizeLabel.textContent = "TALLA";
   garmentSizeSelect.setAttribute(
     "aria-label",
     activeGarmentTab === "upper" ? "Talla superior disponible" : "Talla inferior disponible",
@@ -663,11 +1442,7 @@ function renderGarmentTypeOptions(selectAll = false) {
 }
 
 function resetSizeOptions(preserveSelection = false) {
-  const previousSelection = preserveSelection
-    ? selectedSize
-    : garmentGenderSelect.value
-      ? ALL_SIZES_VALUE
-      : "";
+  const previousSelection = preserveSelection ? selectedSize : ALL_SIZES_VALUE;
   selectedSize = previousSelection;
   garmentSizeSelect.replaceChildren();
   const placeholder = document.createElement("option");
@@ -688,7 +1463,7 @@ function resetSizeOptions(preserveSelection = false) {
     garmentSizeSelect.append(option);
   }
   garmentSizeSelect.value = selectedSize;
-  garmentSizeSelect.disabled = !garmentGenderSelect.value;
+  garmentSizeSelect.disabled = false;
 }
 
 function setActiveGarmentTab(tab) {
@@ -748,7 +1523,7 @@ function populateAvailableSizes(products) {
     ? previouslySelectedSize
     : "";
   garmentSizeSelect.value = selectedSize;
-  garmentSizeSelect.disabled = !garmentGenderSelect.value;
+  garmentSizeSelect.disabled = false;
 }
 
 function productMatchesGarmentTerm(product, terms) {
@@ -802,9 +1577,11 @@ function productMatchesGender(product, gender) {
     "infantil", "nino", "nina", "ninos", "ninas", "kids", "children", "child",
   ];
   if (childMarkers.some((marker) => words.has(marker))) return false;
+  if (gender === "todos") return true;
   const hasMasculineMarker = masculineMarkers.some((marker) => words.has(marker));
   const hasFeminineMarker = feminineMarkers.some((marker) => words.has(marker));
   if (hasMasculineMarker && hasFeminineMarker) return false;
+  if (!gender || gender === "todos") return true;
   if (!hasMasculineMarker && !hasFeminineMarker) {
     return true;
   }
@@ -814,12 +1591,76 @@ function productMatchesGender(product, gender) {
       && (hasFeminineMarker || unisexMarkers.some((marker) => words.has(marker)));
 }
 
+function productIsExcluded(product) {
+  const words = new Set(normalizeProductWords(
+    `${product.name || ""} ${product.gender_metadata || ""} ${product.category || ""}`,
+  ));
+  const excludedMarkers = [
+    "perfume", "perfumes", "bebe", "bebes", "baby", "infantil", "nino", "nina",
+    "ninos", "ninas", "kids", "children", "child",
+    "belleza", "beauty", "maquillaje", "maquillajes", "cosmetico", "cosmeticos",
+    "cosmetica", "skincare", "facial", "corporal", "shampoo", "acondicionador",
+    "labial", "rimel", "mascara", "base", "rubor", "serum", "crema",
+  ];
+  return excludedMarkers.some((marker) => words.has(marker));
+}
+
+function normalizeProductWords(text) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .match(/[a-z0-9]+/g) || [];
+}
+
+function productMatchesColor(product, color) {
+  if (!color) return true;
+  const normalizeWords = (text) => text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .match(/[a-z0-9]+/g) || [];
+  const productWords = new Set(normalizeWords(
+    `${product.name} ${product.gender_metadata || ""}`,
+  ));
+  const colorWords = normalizeWords(color.name).filter((word) => word.length > 3);
+  return colorWords.length === 0 || colorWords.some((word) => productWords.has(word));
+}
+
+function productMatchesSize(product, size) {
+  if (!size || size === ALL_SIZES_VALUE) return true;
+  return (product.sizes || []).some(
+    (variant) => variant.size.toUpperCase().trim() === size,
+  );
+}
+
+function productMatchesSelectedFilters(
+  product,
+  matchTerms,
+  gender,
+  selectedSizeValue,
+  color,
+  allGenders,
+  allGarments,
+) {
+  if (productIsExcluded(product)) return false;
+  const checks = [];
+  if (!allGenders) checks.push(productMatchesGender(product, gender));
+  if (selectedSizeValue && selectedSizeValue !== ALL_SIZES_VALUE) {
+    checks.push(productMatchesSize(product, selectedSizeValue));
+  }
+  if (!allGarments) checks.push(productMatchesGarmentTerm(product, matchTerms));
+  if (color) checks.push(productMatchesColor(product, color));
+  if (checks.length === 0) return true;
+  return checks.every(Boolean);
+}
+
 function filteredProductsForSelectedSize() {
   return falabellaProductResults.filter((product) => {
     const availableSizes = product.sizes || [];
     if (!availableSizes.length) return false;
+    if (!selectedSize) return true;
     if (selectedSize === ALL_SIZES_VALUE) return true;
-    if (!selectedSize) return false;
     return availableSizes.some(
       (variant) => variant.size.toUpperCase().trim() === selectedSize,
     );
@@ -827,8 +1668,18 @@ function filteredProductsForSelectedSize() {
 }
 
 function renderFalabellaProducts(products = filteredProductsForSelectedSize()) {
+  const productsPerPage = 6;
+  const totalPages = Math.max(1, Math.ceil(products.length / productsPerPage));
+  falabellaProductPage = Math.min(falabellaProductPage, totalPages - 1);
+  const pageStart = falabellaProductPage * productsPerPage;
+  const productsToRender = products.slice(pageStart, pageStart + productsPerPage);
+  const hasPagination = products.length > productsPerPage;
+  productsPagination.hidden = !hasPagination;
+  productsPage.textContent = `${falabellaProductPage + 1} / ${totalPages}`;
+  productsPrevious.disabled = !hasPagination || falabellaProductPage === 0;
+  productsNext.disabled = !hasPagination || falabellaProductPage >= totalPages - 1;
   falabellaProducts.replaceChildren();
-  for (const product of products) {
+  for (const product of productsToRender) {
     const card = document.createElement("article");
     card.className = "falabella-product-card";
     const image = document.createElement("img");
@@ -854,23 +1705,9 @@ function renderFalabellaProducts(products = filteredProductsForSelectedSize()) {
         : `${product.price} ${product.currency}`;
       info.append(price);
     }
-    const variantsBySize = new Map(
-      (product.sizes || []).map((variant) => [
-        variant.size.toUpperCase().trim(),
-        variant,
-      ]),
-    );
     const sizeOptions = activeGarmentTab === "upper"
       ? standardUpperSizes.map((size) => ({ size, label: size }))
       : standardLowerSizes;
-    const sizes = document.createElement("span");
-    sizes.className = "falabella-product-sizes";
-    sizes.textContent = `Disponibilidad por talla: ${sizeOptions
-      .map(({ size, label }) =>
-        `${label}: ${variantsBySize.has(size) ? "disponible (unidades no informadas)" : "sin disponibilidad"}`,
-      )
-      .join(" · ")}`;
-    info.append(sizes);
 
     const source = document.createElement("a");
     source.href = product.url;
@@ -911,27 +1748,25 @@ function renderFalabellaProducts(products = filteredProductsForSelectedSize()) {
       });
       info.append(sizeSelect);
     }
-    const addButton = document.createElement("button");
-    addButton.className = "falabella-add-button";
-    addButton.type = "button";
+    const cartButton = document.createElement("button");
+    cartButton.className = "falabella-add-button falabella-cart-button";
+    cartButton.type = "button";
     const updateAddButton = () => {
-      const alreadySelected = selectedOutfit.some(
+      const alreadyInCart = shoppingCart.some(
         (item) => item.url === (selectedVariant?.url || product.url),
       );
-      addButton.textContent = alreadySelected
-        ? "En el conjunto"
-        : selectedVariant
-          ? "Agregar al conjunto"
-          : "Elige una talla";
-      addButton.disabled = !selectedVariant || alreadySelected;
+      cartButton.textContent = alreadyInCart ? "En el carrito" : "Agregar al Carrito";
+      cartButton.disabled = !selectedVariant || alreadyInCart;
     };
     updateAddButton();
-    addButton.addEventListener("click", () =>
-      addProductToOutfit(product, garmentType, selectedVariant),
-    );
+    cartButton.addEventListener("click", () => {
+      // Esta acción agrega el mismo producto al conjunto y al carrito.
+      addProductToOutfit(product, garmentType, selectedVariant);
+      updateAddButton();
+    });
     const actions = document.createElement("div");
     actions.className = "falabella-product-actions";
-    actions.append(source, addButton);
+    actions.append(source, cartButton);
     info.append(actions);
     card.append(image, info);
     falabellaProducts.append(card);
@@ -964,36 +1799,59 @@ function addProductToOutfit(product, garmentType, selectedVariant) {
     colorHex: selectedColor?.hex || "#8C7C6E",
   };
 
-  if (garment.category === "one-pieces") {
-    selectedOutfit = [item];
-  } else if (garment.category === "bottoms") {
-    selectedOutfit = selectedOutfit.filter(
-      (selected) => garmentTypes[selected.garmentType]?.category !== "bottoms"
-        && garmentTypes[selected.garmentType]?.category !== "one-pieces",
-    );
-    selectedOutfit.push(item);
-  } else {
-    selectedOutfit = selectedOutfit.filter(
-      (selected) => garmentTypes[selected.garmentType]?.category !== "tops"
-        && garmentTypes[selected.garmentType]?.category !== "one-pieces",
-    );
-    selectedOutfit.push(item);
+  if (!selectedOutfit.some((selected) => selected.url === item.url)) {
+    selectedOutfit = [...selectedOutfit, item];
   }
-  shoppingCart = selectedOutfit.map((selected) => ({ ...selected }));
+  addCartItem(item);
   renderSelectedOutfit();
   renderFalabellaProducts();
   scheduleAutomaticTryOn();
 }
 
+function addCartItem(item) {
+  if (shoppingCart.some((selected) => selected.url === item.url)) return;
+  shoppingCart = [...shoppingCart, { ...item }];
+  renderShoppingCart();
+}
+
+function addProductToCart(product, garmentType, selectedVariant) {
+  const garment = garmentTypes[garmentType];
+  if (!garment || (!selectedColor && !allColorsSelected) || !selectedVariant) return;
+  const priceValueText = String(selectedVariant.price || product.price || "");
+  const rawPrice = priceValueText.replace(/[^\d.,-]/g, "");
+  const priceDigits = /[.,]\d{2}$/.test(rawPrice)
+    ? rawPrice.slice(0, -3).replace(/\D/g, "")
+    : rawPrice.replace(/\D/g, "");
+  const parsedPrice = priceDigits ? Number(priceDigits) : null;
+  addCartItem({
+    name: product.name,
+    brand: product.brand,
+    price: priceValueText,
+    priceValue: Number.isSafeInteger(parsedPrice) ? parsedPrice : null,
+    currency: product.currency || "CLP",
+    url: selectedVariant.url || product.url,
+    image_url: selectedVariant.image_url || product.image_url,
+    fallback_image_url: product.image_url,
+    size: selectedVariant.size,
+    garmentType,
+    garment: garment.label,
+    category: garment.category,
+    color: selectedColor?.name || "Color no especificado",
+    colorHex: selectedColor?.hex || "#8C7C6E",
+  });
+  renderFalabellaProducts();
+}
+
 function renderFalabellaFilters(preserveSizeSelection = false) {
   falabellaProductResults = [];
+  falabellaProductPage = 0;
   resetSizeOptions(preserveSizeSelection);
   const garment = garmentTypes[garmentTypeSelect.value];
   const gender = garmentGenderSelect.value;
   falabellaProducts.replaceChildren();
-  falabellaHint.textContent = (selectedColor || allColorsSelected) && garment && gender
-    ? "Elige género y tipo de prenda para ver resultados. La talla verificada comienza en Todos."
-    : "Elige un género, color y tipo de prenda para buscar. La talla verificada comienza en Todos.";
+  falabellaHint.textContent = garment && gender
+    ? "Mostrando prendas de hombre y mujer. Puedes ajustar los filtros si quieres."
+    : "Mostrando todos los productos disponibles.";
   searchFalabellaProducts();
   scheduleColorAvailabilityCheck();
 }
@@ -1064,7 +1922,7 @@ function renderShoppingCart() {
   cartCount.textContent = `${itemCount} ${itemCount === 1 ? "producto" : "productos"}`;
   cartEmpty.hidden = itemCount > 0;
   cartTotal.textContent = itemCount ? formatPrice(totalForOutfit(shoppingCart)) : "$0";
-  cartCheckoutButton.disabled = itemCount === 0;
+  cartCheckoutButton.disabled = true;
 
   for (const item of shoppingCart) {
     const row = document.createElement("article");
@@ -1098,27 +1956,46 @@ function renderShoppingCart() {
     row.append(image, details, price, remove);
     cartItems.append(row);
   }
+  if (!shoppingCart.length && activeFlowSlide === "payment") {
+    showFlowSlide("shopping");
+    return;
+  }
+  updateFlowNavigation();
 }
 
-function openCartProducts() {
+function openCartModal() {
   if (!shoppingCart.length) return;
-  for (const item of shoppingCart) {
-    window.open(item.url, "_blank", "noopener,noreferrer");
+  shoppingCartSection.hidden = false;
+  cartModalBackdrop.hidden = false;
+  document.body.classList.add("modal-open");
+  if (useSavedAddress.checked) fillDeliveryAddressFromProfile();
+  fillCheckoutContactFromProfile();
+  closeCartButton.focus();
+}
+
+function closeCartModal() {
+  if (activeFlowSlide === "payment") {
+    showFlowSlide("shopping", true);
+    return;
   }
+  shoppingCartSection.hidden = true;
+  cartModalBackdrop.hidden = true;
+  document.body.classList.remove("modal-open");
 }
 
 function updateMannequinGender() {
   const gender = garmentGenderSelect.value;
-  mannequin.dataset.gender = gender;
+  const mannequinGender = ["mujer", "hombre"].includes(gender) ? gender : "";
+  mannequin.dataset.gender = mannequinGender;
   mannequinArtworkGeneration += 1;
   mannequinGenderImages.forEach((image) => {
-    image.hidden = !gender || image.dataset.gender !== gender;
+    image.hidden = !mannequinGender || image.dataset.gender !== mannequinGender;
   });
-  if (gender && photoSkinRgb) {
-    renderMannequinSkinTone(gender, photoSkinRgb);
-  } else if (gender) {
-    const image = mannequinGenderImages.find((entry) => entry.dataset.gender === gender);
-    image.src = `/api/mannequin-image?gender=${encodeURIComponent(gender)}`;
+  if (mannequinGender && photoSkinRgb) {
+    renderMannequinSkinTone(mannequinGender, photoSkinRgb);
+  } else if (mannequinGender) {
+    const image = mannequinGenderImages.find((entry) => entry.dataset.gender === mannequinGender);
+    if (image) image.src = `/api/mannequin-image?gender=${encodeURIComponent(mannequinGender)}`;
     if (renderedMannequinUrl) URL.revokeObjectURL(renderedMannequinUrl);
     renderedMannequinUrl = "";
   } else if (renderedMannequinUrl) {
@@ -1127,20 +2004,72 @@ function updateMannequinGender() {
   }
   mannequin.setAttribute(
     "aria-label",
-    gender === "mujer"
+    mannequinGender === "mujer"
       ? "Maniquí femenino con el conjunto seleccionado"
-      : gender === "hombre"
+      : mannequinGender === "hombre"
         ? "Maniquí masculino con el conjunto seleccionado"
         : "Selecciona un género para mostrar el maniquí",
   );
 }
 
 async function loadMannequinLayer(gender, layer) {
+  const cacheKey = `${gender}:${layer}`;
+  if (mannequinLayerCache.has(cacheKey)) {
+    return mannequinLayerCache.get(cacheKey);
+  }
   const image = new Image();
   image.src =
     `/api/mannequin-image?gender=${encodeURIComponent(gender)}&layer=${layer}`;
-  await image.decode();
-  return image;
+  const imagePromise = image.decode()
+    .then(() => image)
+    .catch((error) => {
+      mannequinLayerCache.delete(cacheKey);
+      throw error;
+    });
+  mannequinLayerCache.set(cacheKey, imagePromise);
+  return imagePromise;
+}
+
+const mannequinSkinCache = new Map();
+
+async function createTintedMannequinBlob(artwork, mask, rgb) {
+  if (artwork.naturalWidth !== mask.naturalWidth || artwork.naturalHeight !== mask.naturalHeight) {
+    throw new Error("La máscara de acuarela no coincide con el tamaño del dibujo.");
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = artwork.naturalWidth;
+  canvas.height = artwork.naturalHeight;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = canvas.width;
+  maskCanvas.height = canvas.height;
+  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+  if (!context || !maskContext) {
+    throw new Error("No se pudo preparar la acuarela del maniquí.");
+  }
+  context.drawImage(artwork, 0, 0);
+  maskContext.drawImage(mask, 0, 0);
+  const artworkPixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  const maskPixels = maskContext.getImageData(0, 0, canvas.width, canvas.height);
+  const [red, green, blue] = rgb;
+  for (let offset = 0; offset < artworkPixels.data.length; offset += 4) {
+    const watercolor = (maskPixels.data[offset] / 255) * 0.58;
+    if (watercolor <= 0.01) continue;
+    const graphite = artworkPixels.data[offset];
+    const light = 0.58 + (graphite / 255) * 0.42;
+    artworkPixels.data[offset] = graphite * (1 - watercolor) + red * light * watercolor;
+    artworkPixels.data[offset + 1] =
+      graphite * (1 - watercolor) + green * light * watercolor;
+    artworkPixels.data[offset + 2] =
+      graphite * (1 - watercolor) + blue * light * watercolor;
+  }
+  context.putImageData(artworkPixels, 0, 0);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo pintar el maniquí."))),
+      "image/png",
+    );
+  });
 }
 
 async function renderMannequinSkinTone(gender, rgb) {
@@ -1150,43 +2079,12 @@ async function renderMannequinSkinTone(gender, rgb) {
       loadMannequinLayer(gender, "artwork"),
       loadMannequinLayer(gender, "skin-mask"),
     ]);
-    if (artwork.naturalWidth !== mask.naturalWidth || artwork.naturalHeight !== mask.naturalHeight) {
-      throw new Error("La máscara de acuarela no coincide con el tamaño del dibujo.");
+    const cacheKey = `${gender}:${rgb.map((value) => Math.round(value)).join(",")}`;
+    let blob = mannequinSkinCache.get(cacheKey);
+    if (!blob) {
+      blob = await createTintedMannequinBlob(artwork, mask, rgb);
+      mannequinSkinCache.set(cacheKey, blob);
     }
-    const canvas = document.createElement("canvas");
-    canvas.width = artwork.naturalWidth;
-    canvas.height = artwork.naturalHeight;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    const maskCanvas = document.createElement("canvas");
-    maskCanvas.width = canvas.width;
-    maskCanvas.height = canvas.height;
-    const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
-    if (!context || !maskContext) {
-      throw new Error("No se pudo preparar la acuarela del maniquí.");
-    }
-    context.drawImage(artwork, 0, 0);
-    maskContext.drawImage(mask, 0, 0);
-    const artworkPixels = context.getImageData(0, 0, canvas.width, canvas.height);
-    const maskPixels = maskContext.getImageData(0, 0, canvas.width, canvas.height);
-    const [red, green, blue] = rgb;
-    for (let offset = 0; offset < artworkPixels.data.length; offset += 4) {
-      const watercolor = (maskPixels.data[offset] / 255) * 0.58;
-      if (watercolor <= 0.01) continue;
-      const graphite = artworkPixels.data[offset];
-      const light = 0.58 + (graphite / 255) * 0.42;
-      artworkPixels.data[offset] = graphite * (1 - watercolor) + red * light * watercolor;
-      artworkPixels.data[offset + 1] =
-        graphite * (1 - watercolor) + green * light * watercolor;
-      artworkPixels.data[offset + 2] =
-        graphite * (1 - watercolor) + blue * light * watercolor;
-    }
-    context.putImageData(artworkPixels, 0, 0);
-    const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (result) => (result ? resolve(result) : reject(new Error("No se pudo pintar el maniquí."))),
-        "image/png",
-      );
-    });
     if (generation !== mannequinArtworkGeneration) return;
     const image = mannequinGenderImages.find((entry) => entry.dataset.gender === gender);
     const nextUrl = URL.createObjectURL(blob);
@@ -1207,6 +2105,26 @@ async function renderMannequinSkinTone(gender, rgb) {
 
 function updateMannequinOutfit() {
   const generation = ++mannequinOutfitGeneration;
+  const selectedGender = garmentGenderSelect.value;
+  const hasSpecificGender = ["mujer", "hombre"].includes(selectedGender);
+  if (!hasSpecificGender) {
+    [mannequinTopImage, mannequinBottomImage, mannequinDressImage].forEach((imageElement) => {
+      imageElement.hidden = true;
+      imageElement.removeAttribute("src");
+      imageElement.style.removeProperty("--garment-width-scale");
+      imageElement.classList.remove("garment-top-image", "garment-bottom-image", "garment-dress-image");
+      imageElement.parentElement.removeAttribute("data-garment-status");
+    });
+    mannequinTop.classList.remove("wearing-garment");
+    mannequinDress.classList.remove("wearing-garment");
+    mannequinBottomGarment.classList.remove("wearing-garment");
+    mannequinTopLabel.textContent = "";
+    mannequinBottomLabel.textContent = "";
+    mannequinDressLabel.textContent = "";
+    mannequin.setAttribute("aria-label", "Selecciona un género para mostrar las prendas del conjunto");
+    mannequinNote.textContent = "Selecciona un género en los filtros para mostrar las imágenes del conjunto.";
+    return;
+  }
   mannequinNote.textContent = tryOnMode === "gemini"
     ? "El maniquí es una guía ilustrativa. La prueba virtual con edición generativa se crea con Gemini sobre tu foto; se omite el modelo de segmentación para no competir por recursos."
     : "El maniquí se procesa localmente con rembg y se pinta con acuarela según el tono detectado en tus mejillas. Las prendas se recortan y se integran al dibujo con mezcla de lápiz; la segmentación puede equivocarse en algunas poses.";
@@ -1729,23 +2647,46 @@ function compareSavedOutfits() {
   outfitComparison.hidden = false;
 }
 
+async function fetchFalabellaProducts(query, signal) {
+  const cached = falabellaSearchCache.get(query);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.products;
+  }
+  if (cached) falabellaSearchCache.delete(query);
+
+  const response = await fetch("/api/falabella-search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+    signal,
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "No se pudieron buscar prendas en Falabella.");
+  }
+  if (!Array.isArray(result.products)) {
+    throw new Error("Falabella devolvió resultados con un formato inesperado.");
+  }
+  falabellaSearchCache.set(query, {
+    products: result.products,
+    expiresAt: Date.now() + FALABELLA_CACHE_TTL,
+  });
+  return result.products;
+}
+
 async function searchFalabellaProducts() {
   const garment = garmentTypes[garmentTypeSelect.value];
   const gender = garmentGenderSelect.value;
+  const allGenders = !gender || gender === "todos";
+  const allGarments = !garment || garment.all;
   falabellaSearchController?.abort();
   falabellaSearchController = null;
   const generation = ++falabellaSearchGeneration;
   falabellaProductResults = [];
+  falabellaProductPage = 0;
   falabellaProducts.replaceChildren();
-  if ((!selectedColor && !allColorsSelected) || !garment || !gender || !selectedSize) {
-    falabellaHint.textContent = !gender
-      ? "Selecciona un género para elegir la talla y el tipo de prenda."
-      : !selectedSize
-        ? "Selecciona una talla verificada antes de explorar los productos."
-        : "Selecciona un color y tipo de prenda para explorar productos.";
-    return;
-  }
-  if (garment.gender !== gender) {
+  productsPagination.hidden = true;
+  if (!allGenders && garment && garment.gender !== gender) {
     falabellaHint.textContent = "Elige un tipo de prenda que corresponda al género seleccionado.";
     return;
   }
@@ -1757,11 +2698,11 @@ async function searchFalabellaProducts() {
   falabellaSearchController = controller;
   falabellaHint.textContent = "Actualizando prendas disponibles…";
   try {
-    const searchTerms = garment.all
+    const searchTerms = allGarments
       ? [...new Set(
         Object.values(garmentTypes)
           .filter((type) =>
-            type.gender === gender
+            (allGenders || type.gender === gender)
             && type.tab === activeGarmentTab
             && !type.all,
           )
@@ -1769,23 +2710,11 @@ async function searchFalabellaProducts() {
       )]
       : [garment.searchTerms[0]];
     const resultLists = await Promise.all(searchTerms.map(async (term) => {
-      const query = `${term} ${gender}${colorQuery}`;
-      const response = await fetch("/api/falabella-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-        signal: controller.signal,
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudieron buscar prendas en Falabella.");
-      }
-      if (!Array.isArray(result.products)) {
-        throw new Error("Falabella devolvió resultados con un formato inesperado.");
-      }
+      const query = `${term}${allGenders ? "" : ` ${gender}`}${colorQuery}`;
+      const products = await fetchFalabellaProducts(query, controller.signal);
       const matchingGarmentType = Object.entries(garmentTypes).find(
         ([, type]) =>
-          type.gender === gender
+          (allGenders || type.gender === gender)
           && type.tab === activeGarmentTab
           && !type.all
           && type.searchTerms.includes(term),
@@ -1796,7 +2725,7 @@ async function searchFalabellaProducts() {
         matchTerms: matchingGarment
           ? [...matchingGarment.searchTerms, matchingGarment.label]
           : [term],
-        products: result.products,
+        products,
       };
     }));
     const currentFilterKey =
@@ -1816,13 +2745,20 @@ async function searchFalabellaProducts() {
         const product = products[index];
         if (
           product
-          && productMatchesGender(product, gender)
-          && (!garment.all || productMatchesGarmentTerm(product, matchTerms))
+          && productMatchesSelectedFilters(
+            product,
+            matchTerms,
+            gender,
+            selectedSize,
+            selectedColor,
+            allGenders,
+            allGarments,
+          )
           && !productsByUrl.has(product.url)
         ) {
           productsByUrl.set(product.url, {
             ...product,
-            ...(garment.all && resultGarmentType
+            ...(garment?.all && resultGarmentType
               ? { garmentType: resultGarmentType }
               : {}),
           });
@@ -1856,10 +2792,25 @@ async function searchFalabellaProducts() {
   }
 }
 
+function changeFalabellaProductPage(offset) {
+  const products = filteredProductsForSelectedSize();
+  const productsPerPage = 6;
+  const totalPages = Math.ceil(products.length / productsPerPage);
+  if (totalPages <= 1) return;
+  falabellaProductPage = Math.max(0, Math.min(falabellaProductPage + offset, totalPages - 1));
+  renderFalabellaProducts(products);
+  falabellaProducts.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 garmentTypeSelect.addEventListener("change", () => renderFalabellaFilters(true));
 for (const button of garmentTabs) {
   button.addEventListener("click", () => setActiveGarmentTab(button.dataset.category));
 }
+filtersToggle.addEventListener("click", () => {
+  const expanded = filtersToggle.getAttribute("aria-expanded") !== "false";
+  shoppingControls.classList.toggle("is-collapsed", expanded);
+  filtersToggle.setAttribute("aria-expanded", String(!expanded));
+});
 garmentSizeSelect.addEventListener("change", () => {
   selectedSize = garmentSizeSelect.value;
   searchFalabellaProducts();
@@ -1870,9 +2821,11 @@ garmentGenderSelect.addEventListener("change", () => {
   selectedSize = ALL_SIZES_VALUE;
   renderGarmentTypeOptions(true);
   renderFalabellaFilters(true);
-  selectedOutfit = selectedOutfit.filter(
-    (item) => garmentTypes[item.garmentType]?.gender === garmentGenderSelect.value,
-  );
+  if (["hombre", "mujer"].includes(garmentGenderSelect.value)) {
+    selectedOutfit = selectedOutfit.filter(
+      (item) => garmentTypes[item.garmentType]?.gender === garmentGenderSelect.value,
+    );
+  }
   renderSelectedOutfit();
   scheduleAutomaticTryOn();
   updateMannequinGender();
@@ -1975,23 +2928,14 @@ async function colorHasAvailableProducts(item, context, signal) {
         && type.searchTerms.includes(term),
     )?.[0];
     const matchingGarment = garmentTypes[matchingGarmentType];
-    const response = await fetch("/api/falabella-search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: `${term} ${context.gender} ${item.name.toLowerCase()}`,
-      }),
+    const products = await fetchFalabellaProducts(
+      `${term} ${context.gender} ${item.name.toLowerCase()}`,
       signal,
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || "No se pudo comprobar el color.");
-    }
-    if (!Array.isArray(result.products)) {
-      throw new Error("Falabella devolvió resultados con un formato inesperado.");
-    }
-    const hasAvailableProduct = result.products.some((product) => {
+    );
+    const hasAvailableProduct = products.some((product) => {
       if (
+        productIsExcluded(product)
+        ||
         !productMatchesGender(product, context.gender)
         || (context.garment.all
           && matchingGarment
@@ -2250,7 +3194,7 @@ async function analyzePhoto() {
   resultMessage.classList.remove("error");
   resultMessage.textContent = "Analizando la fotografía…";
   shoppingPanel.hidden = true;
-  setBusy(true);
+  showFlowSlide("analysis");
   setStatus("Cargando el modelo de IA local. La primera vez puede tardar un poco.");
   try {
     const image = new Image();
@@ -2295,9 +3239,8 @@ async function analyzePhoto() {
     emptyState.hidden = true;
     resultMessage.hidden = true;
     resultContent.hidden = false;
-    setStatus(
-      `Rostros detectados: ${faces.length}. Se estimó el perfil usando ${samples.length} píxeles de las mejillas.`,
-    );
+    status.textContent = "";
+    status.classList.remove("error");
   } catch (error) {
     const message = error instanceof Error
       ? error.message
@@ -2305,20 +3248,60 @@ async function analyzePhoto() {
     setStatus(message, true);
     resultMessage.textContent = message;
     resultMessage.classList.add("error");
-  } finally {
-    setBusy(false);
   }
 }
 
-analyzeButton.addEventListener("click", analyzePhoto);
+flowPrevious.addEventListener("click", () => moveFlowSlide(-1));
+flowNext.addEventListener("click", () => moveFlowSlide(1));
+productsPrevious.addEventListener("click", () => changeFalabellaProductPage(-1));
+productsNext.addEventListener("click", () => changeFalabellaProductPage(1));
+flowSteps.forEach((step) => {
+  step.addEventListener("click", () => showFlowSlide(step.dataset.flowTarget, true));
+});
 savedSetsButton.addEventListener("click", openSavedSets);
 closeSavedSetsButton.addEventListener("click", closeSavedSets);
 saveCreatedOutfitButton.addEventListener("click", saveCreatedOutfit);
 saveOutfitButton.addEventListener("click", saveSelectedOutfit);
 compareOutfitsButton.addEventListener("click", compareSavedOutfits);
-cartCheckoutButton.addEventListener("click", openCartProducts);
+savePaymentMethodToggle.addEventListener("change", async () => {
+  if (savePaymentMethodToggle.checked) {
+    const saved = await savePaymentMethod();
+    if (!saved) {
+      savePaymentMethodToggle.checked = false;
+    } else {
+      paymentCardFormPanel.hidden = true;
+    }
+  }
+});
+addPaymentCardButton.addEventListener("click", () => {
+  paymentCardNumber.value = "";
+  paymentCardHolder.value = "";
+  paymentCardExpiry.value = "";
+  paymentCardCvv.value = "";
+  savePaymentMethodToggle.checked = false;
+  paymentCardFormPanel.hidden = false;
+  paymentCardNumber.focus();
+});
+addPaymentMethodButton.addEventListener("click", () => {
+  accountPaymentCardNumber.value = "";
+  accountPaymentCardHolder.value = "";
+  accountPaymentCardExpiry.value = "";
+  accountPaymentCardCvv.value = "";
+  accountPaymentFormPanel.hidden = false;
+  accountPaymentStatus.textContent = "";
+  accountPaymentCardNumber.focus();
+});
+accountSavePaymentMethodButton.addEventListener("click", saveAccountPaymentMethod);
+closeCartButton.addEventListener("click", closeCartModal);
+cartModalBackdrop.addEventListener("click", closeCartModal);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !shoppingCartSection.hidden) closeCartModal();
+});
+updateFlowNavigation();
 installExplanationTooltips();
 loadTryOnConfig();
+loadSavedPaymentMethods();
+syncProfileGenderToFilters();
 
 loadSavedOutfits().catch((error) => {
   savedStatus.textContent = error instanceof Error
