@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4eee6">
+    <title>Matices — Asesor de color</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js?v=gemini-image-tryon"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Matices, inicio">
+        <span class="brand-mark">M</span>
+        <span>matices<span class="brand-dot">.</span></span>
+      </a>
+      <span class="topbar-note">ESTUDIO DE COLOR PERSONAL</span>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="eyebrow">TU COLOR, TU ESTILO</p>
+        <h1>Encuentra los tonos<br>que hablan <em>de ti.</em></h1>
+        <p class="intro-copy">
+          Carga un retrato y recibe una guía visual de colores para explorar.
+          La estimación es orientativa: tu estilo no tiene reglas.
+        </p>
+      </section>
+
+      <section class="workspace" aria-label="Analizar una fotografía">
+        <div class="upload-card">
+          <div class="section-heading">
+            <span class="step">01</span>
+            <div>
+              <h2>Tu fotografía</h2>
+              <p>Un retrato frontal con luz natural da mejores referencias.</p>
+            </div>
+          </div>
+
+          <label class="dropzone" id="dropzone" for="photo-input">
+            <input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp">
+            <span class="upload-icon" aria-hidden="true">↑</span>
+            <span class="drop-title">Elige una foto o arrástrala aquí</span>
+            <span class="drop-hint">JPG, PNG o WEBP · máximo 12 MB</span>
+            <img id="preview" alt="Vista previa de la fotografía seleccionada" hidden>
+          </label>
+          <div class="photo-actions">
+            <button id="camera-button" class="secondary-button" type="button">
+              <span aria-hidden="true">◎</span>
+              <span>Abrir cámara</span>
+            </button>
+            <p>Chrome pedirá permiso. Vista tipo espejo; la foto guardada conserva esa orientación.</p>
+          </div>
+          <div id="camera-panel" class="camera-panel" hidden>
+            <video id="camera-preview" autoplay playsinline muted></video>
+            <div class="camera-actions">
+              <button id="capture-button" class="secondary-button" type="button">Tomar fotografía</button>
+              <button id="close-camera-button" class="text-button" type="button">Cerrar cámara</button>
+            </div>
+          </div>
+          <button id="analyze-button" class="primary-button" type="button" disabled>
+            <span id="button-label">Analizar mi paleta</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+          <button id="saved-sets-button" class="secondary-button saved-sets-button" type="button">
+            Conjuntos guardados
+          </button>
+          <p id="status" class="status" role="status" aria-live="polite">
+            La foto se analiza en este navegador; no se carga a un servidor.
+          </p>
+        </div>
+
+        <div class="result-card" id="results" aria-live="polite">
+          <div class="section-heading">
+            <span class="step">02</span>
+            <div>
+              <h2>Tu lectura de color</h2>
+              <p>Una guía para experimentar, no una etiqueta.</p>
+            </div>
+          </div>
+          <div id="empty-state" class="empty-state">
+            <div class="sun-mark" aria-hidden="true">✳</div>
+            <p>Tu paleta aparecerá aquí</p>
+            <span>Primero selecciona una fotografía.</span>
+          </div>
+          <p id="result-message" class="result-message" role="status" hidden></p>
+          <div id="result-content" hidden>
+            <div class="profile">
+              <div class="profile-item">
+                <span class="profile-label profile-label-with-help">
+                  <span>SUBTONO ESTIMADO</span>
+                  <span id="undertone-help"></span>
+                </span>
+                <strong id="undertone">—</strong>
+                <div class="profile-visual-caption">Matices detectados en las mejillas</div>
+                <div id="undertone-scale" class="profile-scale undertone-scale" role="img" aria-label="Escala de subtonos">
+                  <span data-level="frío">Frío</span>
+                  <span data-level="neutro">Neutro</span>
+                  <span data-level="cálido">Cálido</span>
+                </div>
+              </div>
+              <div class="profile-item">
+                <span class="profile-label profile-label-with-help">
+                  <span>PROFUNDIDAD ESTIMADA</span>
+                  <span id="depth-help"></span>
+                </span>
+                <strong id="depth">—</strong>
+                <div class="profile-visual-caption">Nivel de claridad de la piel</div>
+                <div id="depth-scale" class="profile-scale depth-scale" role="img" aria-label="Escala de profundidad">
+                  <span data-level="clara">Clara</span>
+                  <span data-level="media">Media</span>
+                  <span data-level="oscura">Oscura</span>
+                </div>
+              </div>
+            </div>
+            <div class="palette-heading">
+              <h3>Tonos que te acompañan</h3>
+              <span>5 sugerencias</span>
+            </div>
+            <div id="palette" class="palette"></div>
+          </div>
+          <section id="saved-sets-section" class="saved-sets-section saved-sets-overlay" aria-labelledby="saved-sets-heading" hidden>
+            <div class="lookbook-heading">
+              <div>
+                <span class="profile-label">TUS CONJUNTOS</span>
+                <h3 id="saved-sets-heading">Conjuntos guardados</h3>
+              </div>
+              <div class="saved-sets-heading-actions">
+                <button id="compare-outfits-button" class="secondary-button" type="button" disabled>
+                  Comparar seleccionados
+                </button>
+                <button id="close-saved-sets-button" class="saved-sets-close" type="button" aria-label="Cerrar conjuntos guardados">×</button>
+              </div>
+            </div>
+            <p id="saved-status" class="falabella-hint" role="status" aria-live="polite">
+              Guarda un conjunto para consultarlo después.
+            </p>
+            <div id="saved-outfits" class="saved-outfits"></div>
+            <div id="outfit-comparison" class="outfit-comparison" hidden></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="shopping-panel" class="shopping-panel" hidden aria-label="Armar un conjunto">
+        <div class="section-heading">
+          <span class="step">03</span>
+          <div>
+            <h2>Arma tu conjunto</h2>
+            <p>Explora prendas, agrégalas al maniquí con una guía de color basada en tu piel y tus gustos.</p>
+          </div>
+        </div>
+
+        <div class="garment-tabs" role="tablist" aria-label="Categoría de ropa">
+          <button id="upperwear-tab" class="garment-tab active" type="button" role="tab" aria-selected="true" data-category="upper">Prendas superiores</button>
+          <button id="lowerwear-tab" class="garment-tab" type="button" role="tab" aria-selected="false" data-category="lower">Prendas inferiores</button>
+        </div>
+
+        <div class="shopping-explorer-layout">
+          <div class="shopping-controls" aria-label="Filtros de prendas">
+            <div class="control-group">
+              <label class="profile-label" for="garment-gender">GÉNERO</label>
+              <select id="garment-gender" aria-label="Género de la persona">
+                <option value="">Selecciona</option>
+                <option value="hombre">Masculino</option>
+                <option value="mujer">Femenino</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label id="garment-size-label" class="profile-label" for="garment-size">TALLA VERIFICADA</label>
+              <select id="garment-size" aria-label="Talla verificada" disabled>
+                <option value="">Selecciona una talla antes de explorar</option>
+              </select>
+            </div>
+            <div class="control-group garment-control">
+              <label class="profile-label" for="garment-type">TIPO DE PRENDA</label>
+              <select id="garment-type" aria-label="Tipo de prenda">
+                <option value="tshirt">Camiseta</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <span class="profile-label">COLORES RECOMENDADOS</span>
+              <button id="all-colors-button" class="all-colors-button" type="button" aria-pressed="false">
+                TODOS LOS COLORES
+              </button>
+              <div id="garment-colors" class="garment-colors" role="group" aria-label="Color de la prenda"></div>
+            </div>
+          </div>
+
+          <section class="falabella-section" aria-labelledby="falabella-heading">
+            <div class="falabella-heading">
+              <div>
+                <span class="profile-label">COMPRAR EN FALABELLA CHILE</span>
+                <h3 id="falabella-heading">Prendas para explorar</h3>
+              </div>
+              <a
+                class="falabella-store-link"
+                href="https://www.falabella.com/falabella-cl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Ir a Falabella ↗</a>
+            </div>
+            <p id="falabella-hint" class="falabella-hint">Elige género, color y tipo de prenda. La talla verificada comienza en Todos y puedes limitarla si quieres.</p>
+            <div id="falabella-products" class="falabella-products" aria-live="polite"></div>
+            <p class="falabella-disclaimer">Se muestran los productos comprables que devuelve la búsqueda pública de Falabella para estos filtros. Se indica la disponibilidad por talla; Falabella no publica aquí el número de unidades disponibles. “Todos los colores” muestra la paleta completa. Confirma disponibilidad, color y precio en la tienda.</p>
+          </section>
+        </div>
+
+        <div class="styling-board">
+          <section class="mannequin-panel" aria-labelledby="mannequin-heading">
+            <div class="board-heading">
+              <div>
+                <span class="profile-label">VISTA DE CONJUNTO</span>
+                <h3 id="mannequin-heading">Tu maniquí</h3>
+              </div>
+            </div>
+            <div id="mannequin" class="mannequin" aria-label="Maniquí ilustrado con el conjunto seleccionado">
+              <img
+                class="mannequin-gender-image"
+                data-gender="mujer"
+                src="/api/mannequin-image?gender=mujer"
+                alt="Maniquí femenino"
+                hidden
+              >
+              <img
+                class="mannequin-gender-image"
+                data-gender="hombre"
+                src="/api/mannequin-image?gender=hombre"
+                alt="Maniquí masculino"
+                hidden
+              >
+              <div class="mannequin-figure">
+                <div class="mannequin-head"></div>
+                <div class="mannequin-neck"></div>
+                <div class="mannequin-arms"></div>
+                <div id="mannequin-torso" class="mannequin-torso">
+                  <img class="mannequin-garment-image" alt="" hidden>
+                  <span id="mannequin-top-label" class="mannequin-garment-label"></span>
+                </div>
+                <div id="mannequin-dress" class="mannequin-dress">
+                  <img class="mannequin-garment-image" alt="" hidden>
+                  <span id="mannequin-dress-label" class="mannequin-garment-label"></span>
+                </div>
+                <div id="mannequin-bottom-garment" class="mannequin-bottom-garment" aria-hidden="true">
+                  <img class="mannequin-garment-image" alt="" hidden>
+                </div>
+                <div class="mannequin-hips"></div>
+                <div id="mannequin-legs" class="mannequin-legs">
+                  <span id="mannequin-bottom-label" class="mannequin-garment-label"></span>
+                </div>
+                <div class="mannequin-base"></div>
+              </div>
+            </div>
+            <p id="mannequin-note" class="mannequin-note" aria-live="polite">El maniquí es una guía ilustrativa; la prueba virtual funciona localmente y puede usar Gemini si configuras una clave de API.</p>
+          </section>
+
+          <aside class="outfit-panel" aria-labelledby="outfit-heading">
+            <div class="board-heading">
+              <div>
+                <span class="profile-label">PRENDAS Y PRECIOS</span>
+                <h3 id="outfit-heading" class="help-heading">Tu conjunto</h3>
+              </div>
+            </div>
+            <div id="selected-outfit-items" class="selected-outfit-items" aria-live="polite"></div>
+            <p id="outfit-empty" class="outfit-empty">Agrega prendas desde los resultados de Falabella.</p>
+            <div class="outfit-total">
+              <span>Total estimado</span>
+              <strong id="outfit-total">$0</strong>
+            </div>
+            <p class="outfit-price-note">Los precios se consultan en Falabella y pueden cambiar. El total suma solo prendas con precio disponible.</p>
+            <button id="save-outfit-button" class="secondary-button save-outfit-button" type="button" disabled>Guardar conjunto</button>
+            <p id="create-outfit-status" class="status" role="status" aria-live="polite">
+              Agrega una foto y prendas para generar la prueba virtual automáticamente. Sin una clave de Gemini se usa un modo local sin enviar tu foto.
+            </p>
+            <div id="created-outfit" class="created-outfit" hidden>
+              <img id="created-outfit-image" alt="Vista generada del conjunto en la persona">
+              <button id="save-created-outfit-button" class="secondary-button" type="button">
+                Guardar conjunto creado
+              </button>
+            </div>
+          </aside>
+        </div>
+
+        <section id="shopping-cart" class="shopping-cart" aria-labelledby="shopping-cart-heading">
+          <div class="cart-heading">
+            <div>
+              <span class="profile-label">RESUMEN DE COMPRA</span>
+              <h3 id="shopping-cart-heading">Carrito de compra</h3>
+            </div>
+            <span id="cart-count" class="cart-count" aria-live="polite">0 productos</span>
+          </div>
+          <div id="cart-items" class="cart-items" aria-live="polite"></div>
+          <div id="cart-empty" class="cart-empty">Selecciona una prenda arriba para verla aquí.</div>
+          <div class="cart-summary">
+            <span>Total estimado</span>
+            <strong id="cart-total">$0</strong>
+          </div>
+          <p class="cart-note">El precio y la disponibilidad pueden cambiar. La compra se finaliza en Falabella.</p>
+          <button id="cart-checkout-button" class="primary-button cart-checkout-button" type="button" disabled>
+            <span>Continuar en Falabella</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+        </section>
+      </section>
+
+      <section class="privacy-note">
+        <span class="lock-icon" aria-hidden="true">◈</span>
+        <p><strong>Análisis de color local; la prueba virtual se genera automáticamente al agregar prendas.</strong>
+          El perfil de color se analiza en Chrome. La búsqueda consulta productos
+          públicos de Falabella automáticamente cuando completas o cambias los
+          filtros de prendas.
+          Al solicitar la prueba virtual, tu foto y las imágenes seleccionadas
+          se envían a Google AI Studio para una edición generativa. El uso de la API puede
+          tener costo y no es un modelo especializado en ajuste de prendas.
+          Los conjuntos se guardan solo en este navegador.</p>
+      </section>
+
+      <footer>
+        <span>MATICES · ASESORÍA CROMÁTICA</span>
+        <span>La moda es tuya. La paleta, una invitación.</span>
+      </footer>
+    </main>
+  </body>
+</html>

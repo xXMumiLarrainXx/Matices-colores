@@ -1,0 +1,3 @@
+opencv-python-headless>=4.8,<4.11
+rembg[cpu]==2.0.60
+httpx>=0.23,<1
